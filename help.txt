@@ -1,0 +1,156 @@
+import { gql, TypedDocumentNode } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
+import { useRef } from "react";
+import { useReactToPrint } from 'react-to-print';
+
+interface Appointment {
+  _id: string;
+  date: string;
+  doctorName: string;
+  status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+  reason?: string;
+}
+
+interface Patient {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  age: number;
+  diagnosis?: string;
+  appointments: Appointment[];
+}
+
+interface PageInfo {
+  totalPages?: number;
+  currentPage?: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+}
+
+interface PatientsQuery {
+  patients: {
+    list: Patient[];
+    pageInfo: PageInfo;
+    totalCount?: number;
+  };
+}
+
+const GET_PATIENTS: TypedDocumentNode<PatientsQuery> = gql`
+  query GetPatients($page: Int, $perPage: Int) {
+    patients(page: $page, perPage: $perPage) {
+      list {
+        _id
+        firstName
+        lastName
+        age
+        diagnosis
+        appointments {
+          _id
+          date
+          doctorName
+          status
+          reason
+        }
+      }
+      pageInfo {
+        totalPages
+        currentPage
+        hasNextPage
+        hasPreviousPage
+      }
+      totalCount
+    }
+  }
+`;
+
+// Өвчтөн бүрийн картыг хэвлэх бүрэлдэхүүн хэсэг
+const PatientCard = ({ p }: { p: Patient }) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const reactToPrintFn = useReactToPrint({ contentRef });
+
+  return (
+    <div className="bg-white p-4 rounded shadow border border-gray-200">
+      {/* Хэвлэх үед харагдах албан ёсны маягтын бүтэц */}
+      <div ref={contentRef} className="p-8 hidden print:block">
+        <h1 className="text-2xl font-bold border-b-2 border-black pb-2 mb-4 text-center">
+          ЭМНЭЛГИЙН ОНОШИЙН ХУУДАС
+        </h1>
+        <div className="space-y-4 text-lg">
+          <p><strong>Өвчтөний нэр:</strong> {p.firstName} {p.lastName}</p>
+          <p><strong>Нас:</strong> {p.age}</p>
+          <p><strong>Онош:</strong> {p.diagnosis || "Тодорхойгүй"}</p>
+          
+          <div className="mt-6">
+            <p className="font-bold border-b border-gray-400 mb-2">Уулзалтын түүх:</p>
+            {p.appointments.length > 0 ? (
+              <ul className="list-disc ml-5 space-y-1">
+                {p.appointments.map((a) => (
+                  <li key={a._id}>
+                    {new Date(a.date).toLocaleDateString()} — 
+                    <span className="font-semibold"> {a.doctorName}</span> 
+                    ({a.status}) {a.reason && `- ${a.reason}`}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="italic text-gray-500">Уулзалт бүртгэгдээгүй.</p>
+            )}
+          </div>
+        </div>
+        <div className="mt-10 border-t border-black pt-2 text-right">
+          <p>Эмчийн гарын үсэг: ______________</p>
+        </div>
+      </div>
+
+      {/* Дэлгэц дээр харагдах хэсэг */}
+      <div className="print:hidden">
+        <h2 className="text-xl font-semibold text-blue-600">
+          {p.firstName} {p.lastName}
+        </h2>
+        <p className="text-gray-500 text-sm">Нас: {p.age}</p>
+        {p.diagnosis && <p className="text-gray-600 mt-1">Онош: {p.diagnosis}</p>}
+        
+        <div className="mt-3 flex gap-2">
+          <button 
+            onClick={() => reactToPrintFn()}
+            className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
+          >
+            🖨️ Онош хэвлэх
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function App() {
+  const { loading, error, data } = useQuery(GET_PATIENTS, {
+    variables: { page: 1, perPage: 10 },
+  });
+
+  if (loading) return <div className="p-10 text-center">Уншиж байна...</div>;
+  if (error) return <div className="p-10 text-center text-red-500">Алдаа: {error.message}</div>;
+
+  const { list, pageInfo, totalCount } = data?.patients ?? {};
+
+  return (
+    <div className="p-10 bg-amber-200 min-h-screen">
+      <h1 className="text-3xl font-bold mb-2">🏥 Өвчтөнүүдийн бүртгэл</h1>
+      <p className="text-gray-500 mb-6">Нийт: {totalCount ?? 0} өвчтөн</p>
+
+      <div className="grid gap-4">
+        {list?.map((p) => (
+          <PatientCard key={p._id} p={p} />
+        ))}
+      </div>
+
+      {pageInfo && (
+        <div className="mt-6 text-center text-sm text-gray-500">
+          Хуудас {pageInfo.currentPage} / {pageInfo.totalPages}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;

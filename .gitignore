@@ -1,0 +1,43 @@
+
+# Environment variables (Хамгийн чухал - Нууц түлхүүрүүд)
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+out/
+
+# TypeScript/Node
+*.tsbuildinfo
+coverage/
+.nyc_output/
+
+# OS specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Database (Хэрэв та орон нутагтаа SQLite, MongoDB файлууд хадгалдаг бол)
+*.sqlite
+*.sqlite-journal
+data/
+
+# Logs & Debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE/Editor (VS Code/WebStorm)
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+.settings/
+.project
+.classpath
+node_modules
