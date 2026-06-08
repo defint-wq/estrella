@@ -51,7 +51,6 @@ const patientParams = `
     lastName: String!
     age: Int!
     sex: String
-    diagnosis: String
 `;
 
 const appointmentParams = `
@@ -75,4 +74,7 @@ export const mutations = `
     appointmentAdd(${appointmentParams}): Appointment
     appointmentEdit(_id: ID!, ${appointmentParams}): Appointment
     appointmentRemove(_id: ID!): String
+
+    appointmentComplete(appointmentId: ID!, diagnosis: String!): Appointment
+    appointmentCancel(appointmentId: ID!): Appointment
 `;

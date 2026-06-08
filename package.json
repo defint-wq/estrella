@@ -20,18 +20,22 @@
     "@apollo/client": "^4.2.2",
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
+    "@tabler/icons-react": "^3.44.0",
+    "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "graphql": "^16.14.0",
     "graphql-scalars": "^1.25.0",
+    "lucide-react": "^1.17.0",
     "mongodb": "^7.2.0",
     "mongoose": "^9.6.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.17.0",
     "react-to-print": "^3.3.0",
-    "scalar": "^0.3.6"
+    "scalar": "^0.3.6",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
