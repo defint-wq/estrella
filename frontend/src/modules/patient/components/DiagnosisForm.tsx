@@ -47,7 +47,7 @@ export const AppointmentDiagnosisForm = ({
         value={diagnosisText}
         onChange={(e) => setDiagnosisText(e.target.value)}
         placeholder="Үйлчлүүлэгчийн онош, зөвлөгөөг энд бичнэ үү..."
-        className="w-full p-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium min-h-[60px]"
+        className="w-full p-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium min-h-15"
       />
       <div className="flex justify-end gap-2">
         <button
