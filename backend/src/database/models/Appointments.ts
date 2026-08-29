@@ -3,8 +3,8 @@ import type {
   IAppointment,
   IAppointmentDocument,
 } from "../../../@types/Appointment";
-import type { IModels } from "../../../connectionResolver";
-import { appointmentSchema } from "../definition/appointment";
+import type { IModels } from "../../../connectionResolver.js";
+import { appointmentSchema } from "../definition/appointment.js";
 
 export interface IAppointmentModel extends Model<IAppointmentDocument> {
   createAppointment(doc: IAppointment): Promise<IAppointmentDocument>;

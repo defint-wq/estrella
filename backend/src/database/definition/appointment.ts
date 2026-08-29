@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { IAppointmentDocument } from "../../../@types/Appointment";
+import { IAppointmentDocument } from "../../../@types/Appointment.js";
 
 export const appointmentSchema = new Schema(
   {

@@ -1,7 +1,7 @@
 import mongoose, { Model } from "mongoose";
-import type { IPatient, IPatientDocument } from "../../../@types/Patient";
-import type { IModels } from "../../../connectionResolver";
-import { patientSchema } from "../definition/patients";
+import type { IPatient, IPatientDocument } from "../../../@types/Patient.js";
+import type { IModels } from "../../../connectionResolver.js";
+import { patientSchema } from "../definition/patients.js";
 
 export interface IPatientModel extends Model<IPatientDocument> {
   getPatients(skip: number, limit: number): Promise<IPatientDocument[]>;
