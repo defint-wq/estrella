@@ -1,31 +1,31 @@
 import express from "express";
 import cors from "cors";
-import { apolloServer } from "./src/apolloIndex";
-import { connect, getContext } from "./connectionResolver";
+import { apolloServer } from "./src/apolloIndex.js";
+import { connect, getContext } from "./connectionResolver.js";
 import { expressMiddleware } from "@as-integrations/express5";
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 4000;
 
-async function startServer() {
+const startServer = async () => {
   try {
-    // 1. MongoDB өгөгдлийн сантай холбогдох (initModels давхар ажиллана)
+    // 1. MongoDB-тэй холбогдох
     await connect();
 
     // 2. Apollo Server-ийг эхлүүлэх
     await apolloServer.start();
 
-    // 3. GraphQL Middleware-ийг Express дээр бүртгэх
+    // 3. GraphQL Middleware
     app.use(
       "/graphql",
       cors<cors.CorsRequest>(),
       express.json(),
       expressMiddleware(apolloServer, {
-        context: async () => getContext(), // Таны бэлдсэн getContext функц
+        context: async () => getContext(),
       })
     );
 
-    // 4. Серверийг портон дээр асааж, идэвхтэй байлгах
+    // 4. Порт дээр асаах
     app.listen(PORT, () => {
       console.log(`🚀 Сервер аслаа: http://localhost:${PORT}/graphql`);
     });
@@ -34,7 +34,7 @@ async function startServer() {
     console.error("Сервер асаахад алдаа гарлаа:", error);
     process.exit(1);
   }
-}
+};
 
 // Серверийг ажиллуулах
 startServer();
