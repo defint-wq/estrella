@@ -2,7 +2,7 @@ import mongoose, { Model } from "mongoose";
 import type {
   IAppointment,
   IAppointmentDocument,
-} from "../../../@types/Appointment";
+} from "../../../@types/Appointment.js";
 import type { IModels } from "../../../connectionResolver.js";
 import { appointmentSchema } from "../definition/appointment.js";
 
