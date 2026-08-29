@@ -1,4 +1,4 @@
-import { IContext } from "../../../connectionResolver";
+import { IContext } from "../../../connectionResolver.js";
 
 export const patientQueries = {
   patients: async (

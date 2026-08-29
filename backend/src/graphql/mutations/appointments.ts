@@ -1,6 +1,6 @@
 import { GraphQLError } from "graphql";
 import mongoose from "mongoose";
-import { IContext } from "../../../connectionResolver";
+import { IContext } from "../../../connectionResolver.js"; // 👈 .js өргөтгөл нэмэв
 
 export const appointmentMutations = {
   appointmentAdd: async (
@@ -8,14 +8,12 @@ export const appointmentMutations = {
     { patientId, startTime, endTime, doctorName, status, diagnosis }: any,
     context: IContext,
   ) => {
-    // 1. Ирсэн ID нь Монгусын зөв ObjectId мөн эсэхийг шалгах
     if (!mongoose.Types.ObjectId.isValid(patientId)) {
       throw new GraphQLError("Ирүүлсэн өвчтөний ID-ийн формат буруу байна.", {
         extensions: { code: "BAD_USER_INPUT" },
       });
     }
 
-    // 2. Огноог шалгах
     const start = new Date(startTime);
     const end = new Date(endTime);
     const today = new Date();
@@ -29,7 +27,6 @@ export const appointmentMutations = {
       );
     }
 
-    // 3. Цагийн дараалал зөв үү?
     if (start >= end) {
       throw new GraphQLError(
         "Уулзалтын эхлэх цаг дуусах цагаас өмнө байх ёстой!",
@@ -40,7 +37,6 @@ export const appointmentMutations = {
     }
 
     try {
-      // 4. Энэ өвчтөн бааз дээр үнэхээр байна уу?
       const patientExists = await context.models.Patients.findById(patientId);
       if (!patientExists) {
         throw new GraphQLError(
@@ -51,7 +47,6 @@ export const appointmentMutations = {
         );
       }
 
-      // 5. Уулзалтыг үүсгэнэ
       const newAppointment = await context.models.Appointments.create({
         patientId,
         startTime,
@@ -61,7 +56,6 @@ export const appointmentMutations = {
         diagnosis,
       });
 
-      // 6. Өвчтөний 'appointments' массивд шинэ уулзалтын ID-г нэмнэ
       await context.models.Patients.findByIdAndUpdate(patientId, {
         $push: { appointments: newAppointment._id },
       });
@@ -77,13 +71,11 @@ export const appointmentMutations = {
     }
   },
 
-  // 🔥 Үзлэг дуусгаж, онош хадгалах шинэ мутаци
   appointmentComplete: async (
     _parent: any,
     { appointmentId, diagnosis }: { appointmentId: string; diagnosis: string },
     context: IContext,
   ) => {
-    // 1. Ирсэн ID нь Монгусын зөв ObjectId мөн үү?
     if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
       throw new GraphQLError("Ирүүлсэн уулзалтын ID-ийн формат буруу байна.", {
         extensions: { code: "BAD_USER_INPUT" },
@@ -91,17 +83,16 @@ export const appointmentMutations = {
     }
 
     try {
-      // 2. Уулзалтыг олоод, статус болон оношийг нь шинэчлэх
       const updatedAppointment =
         await context.models.Appointments.findByIdAndUpdate(
           appointmentId,
           {
             $set: {
-              status: "COMPLETED", // Төлвийг "Үзсэн" болгоно
-              diagnosis: diagnosis, // Оношийг хадгална
+              status: "COMPLETED",
+              diagnosis: diagnosis,
             },
           },
-          { new: true }, // Шинэчлэгдсэн датаг буцааж авах тохиргоо
+          { new: true },
         );
 
       if (!updatedAppointment) {
@@ -120,6 +111,7 @@ export const appointmentMutations = {
       });
     }
   },
+
   appointmentCancel: async (
     _parent: any,
     { appointmentId }: { appointmentId: string },

@@ -1,5 +1,5 @@
 import { Document, Types } from "mongoose";
-import { IAppointmentDocument } from "./Appointment";
+import { IAppointmentDocument } from "./Appointment.js";
 
 export type SexStatus = "MALE" | "FEMALE";
 // 1. Бааз руу шинээр илгээх өгөгдлийн бүтэц

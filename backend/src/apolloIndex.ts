@@ -1,10 +1,11 @@
 import { ApolloServer } from "@apollo/server";
-import { GraphQLDateTime } from "graphql-scalars"; // 1. Date scalar ажиллуулахад шаардлагатай
-import { mutations, queries, types } from "./graphql/schemas/patients";
-import { IContext } from "../connectionResolver";
-import { patientQueries } from "./graphql/queries/patients";
-import { patientMutations } from "./graphql/mutations/patients";
-import { appointmentMutations } from "./graphql/mutations/appointments";
+import { GraphQLDateTime } from "graphql-scalars";
+// 👇 Доорх import-уудын төгсгөлд .js өргөтгөл нэмэв:
+import { mutations, queries, types } from "./graphql/schemas/patients.js";
+import { IContext } from "../connectionResolver.js";
+import { patientQueries } from "./graphql/queries/patients.js";
+import { patientMutations } from "./graphql/mutations/patients.js";
+import { appointmentMutations } from "./graphql/mutations/appointments.js";
 import mongoose from "mongoose";
 
 const typeDefs = `
@@ -35,7 +36,6 @@ const resolvers = {
         const idStr = pId.toString();
         const mongooseObjectId = new mongoose.Types.ObjectId(idStr);
 
-        // Текст эсвэл ObjectId-ийн алинар нь ч хадгалагдсан байсан олдохоор хайх:
         return await context.models.Appointments.find({
           patientId: { $in: [idStr, mongooseObjectId] },
         });

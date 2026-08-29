@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql';
-import { IContext } from '../../../connectionResolver';
+import { IContext } from '../../../connectionResolver.js'; // 👈 .js өргөтгөл нэмэв
 
 export const patientMutations = {
   patientAdd: async (_parent: any, args: any, context: IContext) => {
