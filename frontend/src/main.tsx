@@ -6,7 +6,9 @@ import App from "./App.tsx";
 import "./index.css";
 
 const client = new ApolloClient({
-  link: new HttpLink({ uri: "http://localhost:4000/graphql" }),
+  link: new HttpLink({ 
+    uri: "https://estrella-9q81.onrender.com/graphql" 
+  }),
   cache: new InMemoryCache(),
 });
 
