@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
   Check, ChevronDown, ChevronUp, History, Plus, Search, User, UserRound,
@@ -7,6 +7,8 @@ import { GET_PATIENTS } from "../graphql/query/patient";
 import { AppointmentList } from "./AppointmentList";
 import { AppointmentModal } from "./AppointentModal";
 import { useDebouncedValue } from "../../app/hooks/useDebouncedValue";
+import { InfiniteScrollTrigger } from "../../../components/InfiniteScrollTrigger";
+import type { PatientsQuery } from "../types/patient";
 
 interface PatientAppointment {
   _id: string;
@@ -32,27 +34,100 @@ interface Patient {
 
 interface PatientListProps {
   searchQuery: string;
-  page: number;
-  perPage: number;
 }
 
-export const PatientList = ({ searchQuery, page, perPage }: PatientListProps) => {
+const PATIENTS_PER_PAGE = 10;
+
+export const PatientList = ({ searchQuery }: PatientListProps) => {
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
-  const { data, loading, error, refetch } = useQuery(GET_PATIENTS, {
-    variables: { page, perPage, search: debouncedSearch.trim() || null },
+  const {
+    data,
+    loading: queryLoading,
+    error,
+    refetch,
+    fetchMore,
+  } = useQuery(GET_PATIENTS, {
+    variables: {
+      page: 1,
+      perPage: PATIENTS_PER_PAGE,
+      search: debouncedSearch.trim() || null,
+    },
     notifyOnNetworkStatusChange: true,
   });
 
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const fetchMoreLock = useRef(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [activeHistoryPatientId, setActiveHistoryPatientId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
 
   const patients: Patient[] = data?.patients?.list || [];
+  const pageInfo = data?.patients.pageInfo;
+  const hasMore = pageInfo?.hasNextPage ?? false;
+  const initialLoading = queryLoading && !data?.patients;
+
+  useEffect(() => {
+    setLoadMoreError(null);
+  }, [debouncedSearch]);
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || queryLoading || fetchMoreLock.current) return;
+
+    fetchMoreLock.current = true;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const currentPage = pageInfo?.currentPage ?? 1;
+      await fetchMore({
+        variables: {
+          page: currentPage + 1,
+          perPage: PATIENTS_PER_PAGE,
+          search: debouncedSearch.trim() || null,
+        },
+        updateQuery: (
+          previous,
+          { fetchMoreResult },
+        ): PatientsQuery => {
+          if (!fetchMoreResult) return previous;
+          return {
+            ...previous,
+            patients: {
+              ...previous.patients,
+              ...fetchMoreResult.patients,
+              list: [
+                ...previous.patients.list,
+                ...fetchMoreResult.patients.list,
+              ],
+            },
+          };
+        },
+      });
+    } catch (cause) {
+      setLoadMoreError(
+        cause instanceof Error
+          ? cause.message
+          : "Үлдсэн үйлчлүүлэгчдийг ачаалж чадсангүй.",
+      );
+    } finally {
+      fetchMoreLock.current = false;
+      setLoadingMore(false);
+    }
+  }, [
+    debouncedSearch,
+    fetchMore,
+    hasMore,
+    pageInfo?.currentPage,
+    queryLoading,
+  ]);
+  const handleLoadMore = useCallback(() => {
+    void loadMore();
+  }, [loadMore]);
 
   const toggleHistory = (id: string) =>
     setActiveHistoryPatientId((current) => (current === id ? null : id));
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="grid gap-3">
         {[0, 1, 2].map((i) => (
@@ -65,7 +140,7 @@ export const PatientList = ({ searchQuery, page, perPage }: PatientListProps) =>
     );
   }
 
-  if (error) {
+  if (error && !data?.patients) {
     return (
       <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-6 text-center text-[12px] text-rose-700">
         Алдаа: {error.message}
@@ -186,6 +261,13 @@ export const PatientList = ({ searchQuery, page, perPage }: PatientListProps) =>
           </div>
         );
       })}
+
+      <InfiniteScrollTrigger
+        hasMore={hasMore}
+        loading={queryLoading || loadingMore}
+        error={loadMoreError}
+        onLoadMore={handleLoadMore}
+      />
 
       {selectedPatientId && (
         <AppointmentModal

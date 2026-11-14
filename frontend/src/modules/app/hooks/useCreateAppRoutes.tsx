@@ -27,6 +27,18 @@ const CompletedAppointments = lazy(() =>
   })),
 );
 
+const DoctorProfilePage = lazy(() =>
+  import("../../../pages/profile/DoctorProfilePage").then((module) => ({
+    default: module.DoctorProfilePage,
+  })),
+);
+
+const LoginPage = lazy(() =>
+  import("../../../pages/auth/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+
 const HomeFallback = () => (
   <div className="p-6 text-sm text-[#89847b]" role="status">
     Уншиж байна...
@@ -67,7 +79,22 @@ export const useCreateAppRouter = () => {
               />
             </Route>
             <Route path="/patients" element={<PatientRoutes />} />
-            {/* <Route path="/profile" element={<ProfilePage />} /> */}
+            <Route
+              path="/profile"
+              element={
+                <Suspense fallback={<HomeFallback />}>
+                  <DoctorProfilePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/auth/login"
+              element={
+                <Suspense fallback={<HomeFallback />}>
+                  <LoginPage />
+                </Suspense>
+              }
+            />
           </Route>
         </Route>,
       ),

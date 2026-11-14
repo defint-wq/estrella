@@ -7,8 +7,6 @@ import { PatientAddModal } from "../modules/patient/components/PatientModal";
 
 export const PatientPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [page] = useState(1);
-  const [perPage] = useState(10);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [notice, setNotice] = useState("");
@@ -42,7 +40,9 @@ export const PatientPage = () => {
               aria-label="Үйлчлүүлэгч хайх"
               placeholder="Үйлчлүүлэгчийн нэр эсвэл регистрээр хайх..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
               className="w-full bg-transparent text-[13px] text-[#37342f] outline-none placeholder:text-[#b7b1a9]"
             />
           </label>
@@ -57,7 +57,7 @@ export const PatientPage = () => {
           </div>
         )}
 
-        <PatientList searchQuery={searchQuery} page={page} perPage={perPage} />
+        <PatientList searchQuery={searchQuery} />
 
         {isAddModalOpen && (
           <PatientAddModal

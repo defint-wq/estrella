@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
-import { useApolloClient } from "@apollo/client/react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@apollo/client/react";
 import { CalendarDays, Search } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { PageContainer, PageContent } from "../../modules/app/ui/page";
 import { useDebouncedValue } from "../../modules/app/hooks/useDebouncedValue";
 import { GET_APPOINTMENTS } from "../../modules/patient/graphql/query/appointment";
+import type { AppointmentsQuery } from "../../modules/patient/types/patient";
 import { ConsultationForm } from "../../components/ConsultationForm";
+import { InfiniteScrollTrigger } from "../../components/InfiniteScrollTrigger";
 import type { DashboardAppointment, HomeOutletContext } from "./types";
 
-const PATIENTS_PER_PAGE = 100;
+const APPOINTMENTS_PER_PAGE = 10;
 
 const tabClassName = ({ isActive }: { isActive: boolean }) =>
   `rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
@@ -18,76 +20,99 @@ const tabClassName = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export const HomeLayout = () => {
-  const client = useApolloClient();
-  const [appointments, setAppointments] = useState<DashboardAppointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] =
     useState<DashboardAppointment | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
-
-  const loadAppointments = useCallback(async () => {
-    setLoading(true);
-    try {
-      const firstPage = await client.query({
-        query: GET_APPOINTMENTS,
-        variables: {
-          page: 1,
-          perPage: PATIENTS_PER_PAGE,
-          search: debouncedSearch.trim() || null,
-        },
-        fetchPolicy: "network-only",
-      });
-      const appointments: DashboardAppointment[] = [
-        ...firstPage.data.appointments.list,
-      ];
-      const totalPages = Math.max(
-        firstPage.data.appointments.pageInfo.totalPages ?? 1,
-        1,
-      );
-
-      for (let page = 2; page <= totalPages; page += 1) {
-        const result = await client.query({
-          query: GET_APPOINTMENTS,
-          variables: {
-            page,
-            perPage: PATIENTS_PER_PAGE,
-            search: debouncedSearch.trim() || null,
-          },
-          fetchPolicy: "network-only",
-        });
-        appointments.push(...result.data.appointments.list);
-      }
-
-      const validAppointments = appointments.filter((appointment) =>
-        Number.isFinite(new Date(appointment.startTime).getTime()),
-      );
-      validAppointments.sort(
-        (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-      );
-
-      setAppointments(validAppointments);
-      setError(null);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Үзлэгийн жагсаалт авахад алдаа гарлаа.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [client, debouncedSearch]);
+  const status = location.pathname.endsWith("/completed")
+    ? "COMPLETED"
+    : "SCHEDULED";
+  const {
+    data,
+    loading: queryLoading,
+    error,
+    refetch,
+    fetchMore,
+  } = useQuery(GET_APPOINTMENTS, {
+    variables: {
+      page: 1,
+      perPage: APPOINTMENTS_PER_PAGE,
+      search: debouncedSearch.trim() || null,
+      status,
+    },
+    notifyOnNetworkStatusChange: true,
+  });
+  const appointments: DashboardAppointment[] = data?.appointments.list ?? [];
+  const pageInfo = data?.appointments.pageInfo;
+  const hasMore = pageInfo?.hasNextPage ?? false;
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const fetchMoreLock = useRef(false);
 
   useEffect(() => {
-    void loadAppointments();
-  }, [loadAppointments]);
+    setLoadMoreError(null);
+  }, [debouncedSearch, status]);
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || queryLoading || fetchMoreLock.current) return;
+
+    fetchMoreLock.current = true;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const currentPage = pageInfo?.currentPage ?? 1;
+      await fetchMore({
+        variables: {
+          page: currentPage + 1,
+          perPage: APPOINTMENTS_PER_PAGE,
+          search: debouncedSearch.trim() || null,
+          status,
+        },
+        updateQuery: (
+          previous,
+          { fetchMoreResult },
+        ): AppointmentsQuery => {
+          if (!fetchMoreResult) return previous;
+          return {
+            ...previous,
+            appointments: {
+              ...previous.appointments,
+              ...fetchMoreResult.appointments,
+              list: [
+                ...previous.appointments.list,
+                ...fetchMoreResult.appointments.list,
+              ],
+            },
+          };
+        },
+      });
+    } catch (cause) {
+      setLoadMoreError(
+        cause instanceof Error
+          ? cause.message
+          : "Үлдсэн үзлэгүүдийг ачаалж чадсангүй.",
+      );
+    } finally {
+      fetchMoreLock.current = false;
+      setLoadingMore(false);
+    }
+  }, [
+    debouncedSearch,
+    fetchMore,
+    hasMore,
+    pageInfo?.currentPage,
+    queryLoading,
+    status,
+  ]);
+  const handleLoadMore = useCallback(() => {
+    void loadMore();
+  }, [loadMore]);
 
   const outletContext: HomeOutletContext = {
     appointments,
-    loading,
-    error,
+    loading: queryLoading && !data?.appointments,
+    error: data?.appointments ? null : error?.message ?? null,
     searchQuery,
     onSelectAppointment: setSelectedAppointment,
   };
@@ -117,7 +142,9 @@ export const HomeLayout = () => {
               aria-label="Үзлэг хайх"
               placeholder="Үйлчлүүлэгч, регистр, эмч эсвэл оношоор хайх..."
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+              }}
               className="w-full bg-transparent text-[13px] text-[#37342f] outline-none placeholder:text-[#b7b1a9]"
             />
           </label>
@@ -137,6 +164,13 @@ export const HomeLayout = () => {
 
         <Outlet context={outletContext} />
 
+        <InfiniteScrollTrigger
+          hasMore={hasMore}
+          loading={queryLoading || loadingMore}
+          error={loadMoreError}
+          onLoadMore={handleLoadMore}
+        />
+
         {selectedAppointment && (
           <ConsultationForm
             key={selectedAppointment._id}
@@ -144,7 +178,7 @@ export const HomeLayout = () => {
             patientName={selectedAppointment.patientName}
             registrationNumber={selectedAppointment.registrationNumber}
             onClose={() => setSelectedAppointment(null)}
-            onSaved={() => void loadAppointments()}
+            onSaved={() => void refetch()}
           />
         )}
       </PageContent>

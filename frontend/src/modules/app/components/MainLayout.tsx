@@ -5,10 +5,12 @@ import { Sidebar } from "../ui/Sidebar";
 import { BottomBar } from "../ui/Bottombar";
 import { TopBar } from "../ui/Topbar";
 import { GET_MODULES } from "../constants/modules";
+import { useAuth } from "../../auth/AuthContext";
 
-export const MainLayout = ({ user, onLogout }: any) => {
+export const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const menuItems = GET_MODULES(user?.role);
 
@@ -17,7 +19,7 @@ export const MainLayout = ({ user, onLogout }: any) => {
       <TopBar />
       <Sidebar
         user={user}
-        onLogout={onLogout}
+        onLogout={logout}
         navigate={navigate}
         menuItems={menuItems}
         isOpen={sidebarOpen}

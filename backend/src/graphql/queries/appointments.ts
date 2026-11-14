@@ -50,7 +50,7 @@ export const appointmentQueries = {
       const [totalCount, appointments] = await Promise.all([
         context.models.Appointments.countDocuments(filter),
         context.models.Appointments.find(filter)
-          .sort({ startTime: 1 })
+          .sort({ startTime: args.status === "COMPLETED" ? -1 : 1 })
           .skip((page - 1) * perPage)
           .limit(perPage)
           .lean(),
