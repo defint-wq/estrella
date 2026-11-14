@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
   Check, ChevronDown, ChevronUp, History, Plus, Search, User, UserRound,
@@ -6,6 +6,7 @@ import {
 import { GET_PATIENTS } from "../graphql/query/patient";
 import { AppointmentList } from "./AppointmentList";
 import { AppointmentModal } from "./AppointentModal";
+import { useDebouncedValue } from "../../app/hooks/useDebouncedValue";
 
 interface PatientAppointment {
   _id: string;
@@ -36,8 +37,10 @@ interface PatientListProps {
 }
 
 export const PatientList = ({ searchQuery, page, perPage }: PatientListProps) => {
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
   const { data, loading, error, refetch } = useQuery(GET_PATIENTS, {
-    variables: { page, perPage },
+    variables: { page, perPage, search: debouncedSearch.trim() || null },
+    notifyOnNetworkStatusChange: true,
   });
 
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -45,16 +48,6 @@ export const PatientList = ({ searchQuery, page, perPage }: PatientListProps) =>
   const [notice, setNotice] = useState("");
 
   const patients: Patient[] = data?.patients?.list || [];
-
-  const filteredPatients = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return patients;
-    return patients.filter((p) => {
-      const fullName = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
-      const reg = p.registrationNumber?.toLowerCase() ?? "";
-      return fullName.includes(q) || reg.includes(q);
-    });
-  }, [patients, searchQuery]);
 
   const toggleHistory = (id: string) =>
     setActiveHistoryPatientId((current) => (current === id ? null : id));
@@ -88,7 +81,7 @@ export const PatientList = ({ searchQuery, page, perPage }: PatientListProps) =>
         </div>
       )}
 
-      {filteredPatients.length === 0 && (
+      {patients.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-[20px] border border-dashed border-[#e4dfd6] bg-[#fbfaf8] py-12 text-center">
           <Search size={20} className="text-[#b5ab98]" />
           <p className="text-[12px] text-[#9b968d]">
@@ -99,7 +92,7 @@ export const PatientList = ({ searchQuery, page, perPage }: PatientListProps) =>
         </div>
       )}
 
-      {filteredPatients.map((patient) => {
+      {patients.map((patient) => {
         const isOpen = activeHistoryPatientId === patient._id;
         const scheduledCount =
           patient.appointments?.filter((a) => a.status === "SCHEDULED").length ?? 0;

@@ -2,8 +2,8 @@ import { useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useMutation } from "@apollo/client/react";
 import { FileText, Printer, X } from "lucide-react";
-import type { Appointment } from "../types/patient";
-import { APPOINTMENT_COMPLETE } from "../graphql/mutation/appointmentComplete";
+import type { Appointment } from "../modules/patient/types/patient";
+import { APPOINTMENT_COMPLETE } from "../modules/patient/graphql/mutation/appointmentComplete";
 
 interface ConsultationFormProps {
   appointment: Appointment;

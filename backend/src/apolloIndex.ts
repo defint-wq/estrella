@@ -3,12 +3,12 @@ import { GraphQLDateTime } from "graphql-scalars";
 import { mutations, queries, types } from "./graphql/schemas/patients.js";
 import { IContext } from "../connectionResolver.js";
 import { patientQueries } from "./graphql/queries/patients.js";
+import { appointmentQueries } from "./graphql/queries/appointments.js";
 import { patientMutations } from "./graphql/mutations/patients.js";
 import { appointmentMutations } from "./graphql/mutations/appointments.js";
 import mongoose from "mongoose";
 
 const typeDefs = `
-  scalar DateTime
   ${types()}
   type Query { ${queries} }
   type Mutation { ${mutations} }
@@ -19,6 +19,7 @@ const resolvers = {
 
   Query: {
     ...patientQueries,
+    ...appointmentQueries,
   },
 
   Mutation: {

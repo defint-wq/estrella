@@ -3,7 +3,7 @@ import { useMutation } from "@apollo/client/react";
 import {
   CalendarDays, CheckCircle2, Clock, Eye, FileText, Stethoscope, Trash2, XCircle,
 } from "lucide-react";
-import { ConsultationForm } from "./ConsultationForm";
+import { ConsultationForm } from "../../../components/ConsultationForm";
 import { APPOINTMENT_CANCEL } from "../graphql/mutation/appointmentCancel";
 
 interface Appointment {

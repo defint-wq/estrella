@@ -46,6 +46,26 @@ export const types = () => `
         pageInfo: PageInfo
         totalCount: Int
     }
+
+    type AppointmentSearchResult {
+        _id: ID!
+        startTime: DateTime!
+        endTime: DateTime!
+        doctorName: String!
+        status: AppointmentStatus
+        diagnosis: String
+        examinationNotes: String
+        symptoms: String
+        treatment: String
+        patientName: String!
+        registrationNumber: String!
+    }
+
+    type AppointmentListResponse {
+        list: [AppointmentSearchResult]
+        pageInfo: PageInfo
+        totalCount: Int
+    }
 `;
 
 const patientParams = `
@@ -66,7 +86,8 @@ const appointmentParams = `
 `;
 
 export const queries = `
-    patients(page: Int, perPage: Int): PatientsListResponse!
+    patients(page: Int, perPage: Int, search: String): PatientsListResponse!
+    appointments(page: Int, perPage: Int, search: String, status: AppointmentStatus): AppointmentListResponse!
 `;
 
 export const mutations = `

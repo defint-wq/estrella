@@ -1,9 +1,15 @@
-import { gql, TypedDocumentNode } from "@apollo/client";
-import { PatientsQuery } from "../../types/patient"; // Таны TypeScript интерфэйс
+import { gql, type TypedDocumentNode } from "@apollo/client";
+import type {
+  PatientsQuery,
+  PatientsQueryVariables,
+} from "../../types/patient";
 
-export const GET_PATIENTS: TypedDocumentNode<PatientsQuery> = gql`
-  query GetPatients($page: Int, $perPage: Int) {
-    patients(page: $page, perPage: $perPage) {
+export const GET_PATIENTS: TypedDocumentNode<
+  PatientsQuery,
+  PatientsQueryVariables
+> = gql`
+  query GetPatients($page: Int, $perPage: Int, $search: String) {
+    patients(page: $page, perPage: $perPage, search: $search) {
       list {
         _id
         registrationNumber   

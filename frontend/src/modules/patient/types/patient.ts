@@ -34,3 +34,29 @@ export interface PatientsQuery {
     totalCount?: number;
   };
 }
+
+export interface PatientsQueryVariables {
+  page?: number;
+  perPage?: number;
+  search?: string | null;
+}
+
+export interface AppointmentSearchResult extends Appointment {
+  patientName: string;
+  registrationNumber: string;
+}
+
+export interface AppointmentsQuery {
+  appointments: {
+    list: AppointmentSearchResult[];
+    pageInfo: PageInfo;
+    totalCount?: number;
+  };
+}
+
+export interface AppointmentsQueryVariables {
+  page?: number;
+  perPage?: number;
+  search?: string | null;
+  status?: Appointment["status"];
+}

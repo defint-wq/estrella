@@ -2,7 +2,7 @@ import { IconHome, IconStethoscope, IconShield, IconUsers, IconSmartHome } from 
 
 export const GET_MODULES = (userRole?: string) => {
   const modules = [
-    { path: "/", icon: IconSmartHome, label: "Үндсэн цэс" },
+    { path: "/home/pending", icon: IconSmartHome, label: "Үндсэн цэс" },
     { path: "/patients", icon: IconUsers, label: "Үйлчлүүлэгчид" },
     { path: "/profile", icon: IconStethoscope, label: "Эмчийн мэдээлэл" },
   ];

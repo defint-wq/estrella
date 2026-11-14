@@ -2,9 +2,10 @@ import mongoose, { Model } from "mongoose";
 import type { IPatient, IPatientDocument } from "../../../@types/Patient.js";
 import type { IModels } from "../../../connectionResolver.js";
 import { patientSchema } from "../definition/patients.js";
+import { createPatientSearchFilter } from "../../utils/search.js";
 
 export interface IPatientModel extends Model<IPatientDocument> {
-  getPatients(skip: number, limit: number): Promise<IPatientDocument[]>;
+  getPatients(skip: number, limit: number, search?: string): Promise<IPatientDocument[]>;
   createPatient(doc: IPatient): Promise<IPatientDocument>;
   updatePatient(
     _id: string,
@@ -16,13 +17,17 @@ export interface IPatientModel extends Model<IPatientDocument> {
 export const loadPatientClass = (model: IModels) => {
   class Patient {
     // 1. Өвчтөнүүдийг хуудаслалт болон уулзалтуудтай нь хамт татах
-    public static async getPatients(skip: number, limit: number) {
+    public static async getPatients(
+      skip: number,
+      limit: number,
+      search?: string,
+    ) {
       // mongoose.model-оор шууд дуудах нь Circular Dependency-ээс сэргийлнэ
       const PatientModel = mongoose.model<IPatientDocument, IPatientModel>(
         "Patients",
       );
 
-      return await PatientModel.find()
+      return await PatientModel.find(createPatientSearchFilter(search))
         .populate({
           path: "appointments",
           options: { sort: { startTime: -1 } },
