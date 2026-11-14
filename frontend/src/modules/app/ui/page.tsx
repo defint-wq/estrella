@@ -46,7 +46,7 @@ export const PageContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-5 pb-28 pt-6 sm:px-8 sm:pt-8 lg:px-10 lg:pb-10 lg:pt-6",
+        "min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-5 pb-32 pt-6 sm:px-8 sm:pt-8 lg:px-10 lg:pb-10 lg:pt-6",
         className,
       )}
       {...props}

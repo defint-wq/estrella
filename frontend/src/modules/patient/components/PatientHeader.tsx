@@ -10,14 +10,14 @@ type PatientHeaderProps = {
 
 export const PatientHeader = ({ count, action }: PatientHeaderProps) => {
   return (
-    <div className="mb-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <div className="mb-4 flex flex-col justify-between gap-5 sm:flex-row sm:items-end sm:gap-4">
       <div className="flex items-start gap-3.5">
         <div className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-[#353a33] text-[#eee8dc] shadow-sm">
           <Users size={20} strokeWidth={1.6} />
         </div>
 
         <div>
-          <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[25px] font-medium tracking-[-0.04em] text-[#36342f] sm:text-[30px]">
+          <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-bold leading-tight tracking-[-0.04em] text-[#36342f] sm:text-2xl">
             <span>
               Үйлчлүүлэгчдийн <span className="text-[#a48663]">жагсаалт</span>
             </span>
@@ -30,7 +30,7 @@ export const PatientHeader = ({ count, action }: PatientHeaderProps) => {
         </div>
       </div>
 
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className="w-full shrink-0 sm:w-auto">{action}</div>}
     </div>
   );
 };

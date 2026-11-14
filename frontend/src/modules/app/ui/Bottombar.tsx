@@ -10,7 +10,7 @@ export const BottomBar = ({ menuItems }: { menuItems: MenuItem[] }) => {
   return (
     <nav
       aria-label="Үндсэн цэс"
-      className="fixed inset-x-0 bottom-0 z-50 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-[#f7f6f3] via-[#f7f6f3]/95 to-transparent px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
     >
       <div className="mx-auto flex h-[68px] max-w-md items-center justify-around rounded-[22px] border border-[#e9e5de] bg-white/90 px-2 shadow-[0_8px_30px_rgba(60,52,41,0.12)] backdrop-blur-md">
         {menuItems.map((item) => (

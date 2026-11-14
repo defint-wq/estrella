@@ -26,14 +26,14 @@ export const PatientPage = () => {
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-stone-700 px-5 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 active:scale-95"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-stone-700 px-4 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 active:scale-95 sm:w-auto sm:px-5"
               >
                 <UserPlus size={15} />
                 Үйлчлүүлэгч нэмэх
               </button>
             }
           />
-          <label className="mt-4 flex h-11 items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-white px-3.5 text-[#9c968d] transition focus-within:border-[#ad9272] focus-within:ring-4 focus-within:ring-[#ad9272]/10">
+          <label className="mt-5 flex h-12 items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-white px-4 text-[#9c968d] transition focus-within:border-[#ad9272] focus-within:ring-4 focus-within:ring-[#ad9272]/10 sm:mt-4">
             <Search size={16} className="shrink-0" />
             <input
               type="text"

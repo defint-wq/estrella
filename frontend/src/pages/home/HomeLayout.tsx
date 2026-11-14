@@ -126,13 +126,13 @@ export const HomeLayout = () => {
               <CalendarDays size={20} strokeWidth={1.6} />
             </div>
             <div>
-              <h1 className="text-[25px] font-medium tracking-[-0.04em] text-[#36342f] sm:text-[30px]">
+              <h1 className="text-xl font-bold leading-tight tracking-[-0.04em] text-[#36342f] sm:text-2xl">
                 Үзлэгийн жагсаалт
               </h1>
             </div>
           </div>
 
-          <label className="mt-5 flex h-11 items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-white px-3.5 text-[#9c968d] transition focus-within:border-[#ad9272] focus-within:ring-4 focus-within:ring-[#ad9272]/10">
+          <label className="mt-5 flex h-12 items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-white px-4 text-[#9c968d] transition focus-within:border-[#ad9272] focus-within:ring-4 focus-within:ring-[#ad9272]/10">
             <Search size={16} className="shrink-0" />
             <input
               type="search"
