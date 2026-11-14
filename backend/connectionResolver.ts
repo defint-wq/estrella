@@ -6,10 +6,10 @@ import { IAppointmentModel, loadAppointmentClass } from "./src/database/models/A
 
 const uri = process.env.MONGO_URL;
 
-const mongooseConnectionOptions: mongoose.ConnectOptions = {
-  serverSelectionTimeoutMS: 5000,
+const mongooseConnectionOptions = {
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
-};
+} as mongoose.ConnectOptions;
 
 export interface IModels {
   Patients: IPatientModel;
@@ -40,22 +40,25 @@ export const getModels = (): IModels => {
 
 mongoose.connection
   .on("connected", () => {
-    console.log(`Connected to the database: ${uri}`);
+    console.log("Connected to the database");
   })
   .on("disconnected", () => {
-    console.log(`Disconnected from database: ${uri}`);
-    process.exit(1);
+    console.log("Disconnected from database");
   })
-  .on("error", (error) => {
-    console.error(`Database connection error: ${uri}, ${error}`);
-    process.exit(1);
+  .on("error", (error: Error) => {
+    console.error("Database connection error:", error.message);
   })
   .on("close", () => {});
 
 export async function connect(): Promise<mongoose.Connection> {
-  if (!uri) throw new Error("URI is not defined");
+  if (!uri) throw new Error("MONGO_URL is not defined");
 
-  await mongoose.connect(uri, mongooseConnectionOptions);
+  try {
+    await mongoose.connect(uri, mongooseConnectionOptions);
+  } catch (err) {
+    console.error("Mongo connect failed:", (err as Error).message);
+    throw err;
+  }
 
   models = initModels();
   return mongoose.connection;

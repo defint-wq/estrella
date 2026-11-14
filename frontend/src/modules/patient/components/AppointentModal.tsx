@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Calendar, X, AlertTriangle, ChevronDown, ChevronUp, Clock, CalendarDays } from "lucide-react";
+import {
+  AlertTriangle, CalendarDays, ChevronDown, ChevronUp, Clock, Stethoscope, X,
+} from "lucide-react";
 import { APPOINTMENT_ADD } from "../graphql/mutation/appointmentAdd";
 import { GET_PATIENTS } from "../graphql/query/patient";
 
@@ -10,188 +12,208 @@ interface AppointmentModalProps {
   onSuccess: () => void;
 }
 
+const DOCTOR_NAME = "Мөнхцэцэг";
+const SLOT_MINUTES = 20;
+
+// toISOString() нь UTC огноо өгдөг тул өглөө эрт өчигдрийг харуулдаг байсан.
+// Локал огноог гараар үүсгэнэ.
+const toLocalDateStr = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const labelClass =
+  "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9b8a73]";
+
 export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentModalProps) => {
-  const [doctorName] = useState("Мөнхцэцэг");
-  
-  // Өнөөдрийн огноог YYYY-MM-DD хэлбэрээр анхны утга болгож авах
-  const todayStr = new Date().toISOString().substring(0, 10);
+  const todayStr = toLocalDateStr(new Date());
   const [selectedDate, setSelectedDate] = useState(todayStr);
-  
-  const [selectedTime, setSelectedTime] = useState(""); // Жишээ нь: "09:20"
+  const [selectedTime, setSelectedTime] = useState("");
   const [showTimeSlots, setShowTimeSlots] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const { data: patientsData } = useQuery(GET_PATIENTS, {
     variables: { page: 1, perPage: 100 },
   });
 
   const [addAppointment, { loading }] = useMutation(APPOINTMENT_ADD, {
-    onCompleted: () => {
-      alert("Цаг захиалга амжилттай товлогдлоо!");
-      onSuccess();
-    },
-    onError: (err) => {
-      alert("Алдаа гарлаа: " + err.message);
-    }
+    onCompleted: () => onSuccess(),
+    onError: (err) => setErrorMsg("Алдаа гарлаа: " + err.message),
   });
 
-  // Эмчийн цаг давхцаж байгааг шалгах функц (24 цагаар)
+  // Esc дарахад хаах
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // Сонгосон эмчийн цагтай давхцаж байгааг шалгах
   const checkTimeConflict = (timeStr: string) => {
-    if (!patientsData?.patients?.list || !timeStr) return false;
+    const list = patientsData?.patients?.list;
+    if (!list || !timeStr) return false;
 
-    // Сонгосон огноо болон цагийг нийлүүлж ISO формат үүсгэх
     const checkStart = new Date(`${selectedDate}T${timeStr}:00`).getTime();
-    const checkEnd = checkStart + 20 * 60 * 1000; // 20 минут нэмэх
+    const checkEnd = checkStart + SLOT_MINUTES * 60 * 1000;
 
-    for (const patient of patientsData.patients.list) {
+    for (const patient of list) {
       if (!patient.appointments) continue;
       for (const app of patient.appointments) {
         if (app.status === "CANCELLED") continue;
-        if (app.doctorName !== "Мөнхцэцэг") continue;
+        if (app.doctorName !== DOCTOR_NAME) continue;
 
         const appStart = new Date(app.startTime).getTime();
         const appEnd = new Date(app.endTime).getTime();
-
-        // Цаг давхцах нөхцөл
-        if (checkStart < appEnd && checkEnd > appStart) {
-          return true;
-        }
+        if (checkStart < appEnd && checkEnd > appStart) return true;
       }
     }
     return false;
   };
 
-  // 09:00 - 18:00 хүртэл 24 цагийн системээр слот үүсгэх
-  const generateAvailableSlots = () => {
-    const slots = [];
-    const startHour = 9;
-    const endHour = 18;
-
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let min = 0; min < 60; min += 20) {
-        const timeString = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-        const isBusy = checkTimeConflict(timeString);
-
-        slots.push({
-          time: timeString,
-          isBusy,
-        });
+  // 09:00 - 18:00, 20 минут тутамд. Өнгөрсөн цагийг мөн хаана.
+  const slots = useMemo(() => {
+    const result: { time: string; isBusy: boolean }[] = [];
+    const now = Date.now();
+    for (let hour = 9; hour < 18; hour++) {
+      for (let min = 0; min < 60; min += SLOT_MINUTES) {
+        const time = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+        const isPast = new Date(`${selectedDate}T${time}:00`).getTime() < now;
+        result.push({ time, isBusy: isPast || checkTimeConflict(time) });
       }
     }
-    return slots;
-  };
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, patientsData]);
 
-  const selectTimeSlot = (time: string) => {
-    setSelectedTime(time);
-    setShowTimeSlots(false);
-  };
-
-  // Дуусах цагийг 24 цагийн форматаар тооцоолж харуулах (Жишээ нь: 09:20 -> 09:40)
   const getEndTimeDisplay = () => {
     if (!selectedTime) return "--:--";
     const [hour, min] = selectedTime.split(":").map(Number);
-    let endMin = min + 20;
-    let endHour = hour;
-    if (endMin >= 60) {
-      endMin -= 60;
-      endHour += 1;
-    }
-    return `${String(endHour).padStart(2, "0")}:${String(endMin).padStart(2, "0")}`;
+    const total = hour * 60 + min + SLOT_MINUTES;
+    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
   };
+
+  const isCurrentTimeSlotBusy = checkTimeConflict(selectedTime);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg("");
     if (!selectedTime) {
-      alert("Та үзлэгийн цагаа сонгоно уу.");
+      setErrorMsg("Та үзлэгийн цагаа сонгоно уу.");
       return;
     }
 
     const startISO = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
-    const [endHour, endMin] = getEndTimeDisplay().split(":");
-    const endISO = new Date(`${selectedDate}T${endHour}:${endMin}:00`).toISOString();
+    const endISO = new Date(`${selectedDate}T${getEndTimeDisplay()}:00`).toISOString();
 
     addAppointment({
       variables: {
         patientId,
         startTime: startISO,
         endTime: endISO,
-        doctorName,
+        doctorName: DOCTOR_NAME,
         status: "SCHEDULED",
         diagnosis: "",
-      }
+      },
     });
   };
 
-  const isCurrentTimeSlotBusy = checkTimeConflict(selectedTime);
+  const canSubmit = !loading && !!selectedTime && !isCurrentTimeSlotBusy;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
-        
-        <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-indigo-600" />
-            Эмчид цаг товлох
-          </h3>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
-            <X className="w-5 h-5" />
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-[#2b2a26]/40 backdrop-blur-[2px] sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Эмчид цаг товлох"
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[28px] border border-[#e9e5de] bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_20px_60px_rgba(60,52,41,0.2)] sm:rounded-[24px]"
+      >
+        {/* Гарчиг */}
+        <div className="mb-5 flex items-center justify-between border-b border-[#f0ede8] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#f5f2ed] text-[#927f64]">
+              <CalendarDays size={17} />
+            </div>
+            <div>
+              <h3 className="text-[14px] font-semibold tracking-[-0.02em] text-[#34362f]">
+                Эмчид цаг товлох
+              </h3>
+              <p className="mt-0.5 text-[10px] text-[#9b968d]">Үзлэг тус бүр {SLOT_MINUTES} минут</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Хаах"
+            className="rounded-lg p-1.5 text-[#aaa49b] transition hover:bg-[#f4f1ec] hover:text-[#554c3e]"
+          >
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Сонгогдсон эмч */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Эмч */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Сонгогдсон эмч</label>
-            <div className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700">
-              Мөнхцэцэг эмч
+            <span className={labelClass}>Сонгогдсон эмч</span>
+            <div className="flex items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-[#f7f6f3] px-3.5 py-3 text-[13px] font-medium text-[#49463f]">
+              <Stethoscope size={15} className="text-[#a48663]" />
+              {DOCTOR_NAME} эмч
             </div>
           </div>
 
-          {/* ӨДӨР СОНГОХ ХЭСЭГ (Цэвэр огноо) */}
+          {/* Өдөр */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Үзлэгийн өдөр</label>
-            <div className="relative">
-              <input
-                type="date"
-                required
-                value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  setSelectedTime(""); // Өдөр солигдвол цагийг цэвэрлэнэ
-                }}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-semibold text-gray-800"
-              />
-            </div>
+            <label htmlFor="appt-date" className={labelClass}>Үзлэгийн өдөр</label>
+            <input
+              id="appt-date"
+              type="date"
+              required
+              min={todayStr}
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setSelectedTime("");
+                setErrorMsg("");
+              }}
+              className="h-11 w-full rounded-xl border border-[#e8e3db] bg-white px-3.5 text-[13px] font-medium text-[#37342f] outline-none transition focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10"
+            />
           </div>
 
-          {/* ЦАГ ХАРАХ ТОВЧЛУУР (TOGGLE BUTTON) */}
+          {/* Цагийн слот */}
           <div>
+            <span className={labelClass}>Боломжит цаг</span>
             <button
               type="button"
-              onClick={() => setShowTimeSlots(!showTimeSlots)}
-              className="w-full flex items-center justify-between px-4 py-3 border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold transition-all cursor-pointer"
+              onClick={() => setShowTimeSlots((v) => !v)}
+              aria-expanded={showTimeSlots}
+              className="flex w-full items-center justify-between rounded-xl border border-[#e8e3db] bg-[#fbfaf8] px-3.5 py-3 text-[12px] font-medium text-[#615c55] transition hover:bg-[#f7f6f3]"
             >
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span>{selectedDate}-ний боломжит цагуудыг харах</span>
-              </div>
-              {showTimeSlots ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <span className="flex items-center gap-2">
+                <Clock size={15} className="text-[#a48663]" />
+                {selectedTime ? `Сонгосон цаг: ${selectedTime}` : "Цагаа сонгох"}
+              </span>
+              {showTimeSlots ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
 
-            {/* 24 ЦАГИЙН СИСТЕМТЭЙ ЦАГИЙН ЖАГСААЛТ */}
             {showTimeSlots && (
-              <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl max-h-48 overflow-y-auto grid grid-cols-4 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                {generateAvailableSlots().map((slot, index) => (
+              <div className="mt-2 grid max-h-52 grid-cols-4 gap-2 overflow-y-auto rounded-xl border border-[#ece8e1] bg-[#fbfaf8] p-3">
+                {slots.map((slot) => (
                   <button
-                    key={index}
+                    key={slot.time}
                     type="button"
                     disabled={slot.isBusy}
-                    onClick={() => selectTimeSlot(slot.time)}
-                    className={`py-2 text-xs font-bold rounded-lg text-center transition-all ${
+                    onClick={() => {
+                      setSelectedTime(slot.time);
+                      setShowTimeSlots(false);
+                      setErrorMsg("");
+                    }}
+                    className={`rounded-lg py-2 text-center text-[11px] font-medium transition ${
                       slot.isBusy
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed line-through"
+                        ? "cursor-not-allowed bg-[#f1eee9] text-[#bdb7ae] line-through"
                         : slot.time === selectedTime
-                        ? "bg-indigo-600 text-white border border-indigo-600"
-                        : "bg-white border border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600 cursor-pointer shadow-sm"
+                        ? "bg-stone-700 text-white shadow-sm"
+                        : "border border-[#e8e3db] bg-white text-[#5f594f] hover:border-[#ad9272] hover:text-[#34362f]"
                     }`}
                   >
                     {slot.time}
@@ -201,50 +223,58 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
             )}
           </div>
 
-          {/* СОНГОГДСОН ЦАГИЙН БАТАЛГААЖУУЛАЛТ (АМ/РМ байхгүй) */}
+          {/* Эхлэх / дуусах */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Үзлэг эхлэх</label>
-              <div className={`w-full px-4 py-2.5 border rounded-xl text-sm font-bold bg-gray-50 text-gray-800 flex items-center gap-2 ${
-                isCurrentTimeSlotBusy ? "border-rose-500 bg-rose-50/30" : "border-gray-200"
-              }`}>
-                <Clock className="w-3.5 h-3.5 text-gray-400" />
+              <span className={labelClass}>Үзлэг эхлэх</span>
+              <div
+                className={`flex items-center gap-2 rounded-xl border px-3.5 py-3 text-[13px] font-semibold text-[#37342f] ${
+                  isCurrentTimeSlotBusy ? "border-rose-300 bg-rose-50/50" : "border-[#e8e3db] bg-white"
+                }`}
+              >
+                <Clock size={14} className="text-[#a8a197]" />
                 {selectedTime || "--:--"}
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Үзлэг дуусах</label>
-              <div className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 text-gray-500 rounded-xl text-sm font-bold flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5 text-gray-400" />
+              <span className={labelClass}>Үзлэг дуусах</span>
+              <div className="flex items-center gap-2 rounded-xl border border-[#e8e3db] bg-[#f7f6f3] px-3.5 py-3 text-[13px] font-semibold text-[#8b8478]">
+                <Clock size={14} className="text-[#a8a197]" />
                 {getEndTimeDisplay()}
               </div>
             </div>
           </div>
 
           {isCurrentTimeSlotBusy && (
-            <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl text-xs font-semibold">
-              <AlertTriangle className="w-4 h-4 text-rose-500" />
-              <span>Мөнхцэцэг эмч энэ цагт өөр үзлэгтэй байна.</span>
+            <div role="alert" className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11px] font-medium text-rose-700">
+              <AlertTriangle size={15} className="shrink-0" />
+              {DOCTOR_NAME} эмч энэ цагт өөр үзлэгтэй байна.
+            </div>
+          )}
+          {errorMsg && (
+            <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11px] font-medium text-rose-700">
+              {errorMsg}
             </div>
           )}
 
-          {/* Үйлдэл хийх товчлуурууд */}
-          <div className="pt-2 flex gap-3">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50">
+          {/* Үйлдэл */}
+          <div className="flex gap-3 border-t border-[#f0ede8] pt-5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-[#e9e4dc] py-3 text-[12px] font-medium text-[#777168] transition hover:bg-[#f8f6f2]"
+            >
               Цуцлах
             </button>
             <button
               type="submit"
-              disabled={loading || isCurrentTimeSlotBusy || !selectedTime}
-              className={`flex-1 py-2.5 text-white rounded-xl text-sm font-semibold transition-colors ${
-                isCurrentTimeSlotBusy || !selectedTime ? "bg-gray-300 cursor-not-allowed text-gray-500" : "bg-indigo-600 hover:bg-indigo-700"
-              }`}
+              disabled={!canSubmit}
+              className="flex-1 rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:bg-[#d9d5cc] disabled:text-[#9a948a] disabled:shadow-none"
             >
               {loading ? "Бүртгэж байна..." : "Цаг товлох"}
             </button>
           </div>
         </form>
-
       </div>
     </div>
   );

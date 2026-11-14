@@ -18,6 +18,9 @@ export const GET_PATIENTS: TypedDocumentNode<PatientsQuery> = gql`
           doctorName
           status
           diagnosis
+          examinationNotes
+          symptoms
+          treatment
         }
       }
       pageInfo {

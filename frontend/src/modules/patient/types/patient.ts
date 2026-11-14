@@ -5,6 +5,9 @@ export interface Appointment {
   doctorName: string;
   status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
   diagnosis?: string;     // Бэкенд дээрх нэршил нь 'diagnosis' байгаа (reason биш)
+  examinationNotes?: string;
+  symptoms?: string;
+  treatment?: string;
 }
 
 export interface Patient {

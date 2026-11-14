@@ -13,7 +13,7 @@ export const MainLayout = ({ user, onLogout }: any) => {
   const menuItems = GET_MODULES(user?.role);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <TopBar />
       <Sidebar
         user={user}
@@ -24,7 +24,7 @@ export const MainLayout = ({ user, onLogout }: any) => {
         onClose={() => setSidebarOpen(false)}
       />
 
-      <main className="lg:ml-64 flex-1 p-6 pt-20">
+      <main className="h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-[#f7f6f3] pt-14 lg:ml-72 lg:pt-0">
         <Outlet />
       </main>
 

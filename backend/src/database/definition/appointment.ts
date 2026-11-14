@@ -14,6 +14,9 @@ export const appointmentSchema = new Schema(
       default: "SCHEDULED",
     },
     diagnosis: { type: String },
+    examinationNotes: { type: String, trim: true },
+    symptoms: { type: String, trim: true },
+    treatment: { type: String, trim: true },
   },
   {
     timestamps: true,

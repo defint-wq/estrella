@@ -11,6 +11,9 @@ export interface IAppointment {
   doctorName: string;
   status?: AppointmentStatus;
   diagnosis?: string;
+  examinationNotes?: string;
+  symptoms?: string;
+  treatment?: string;
 }
 
 // 2. Баазаас буцаж ирэх Mongoose Document-ийн бүтэц (_id болон цаг хугацаатай)

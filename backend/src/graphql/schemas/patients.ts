@@ -19,6 +19,9 @@ export const types = () => `
         doctorName: String!  
         status: AppointmentStatus
         diagnosis: String
+        examinationNotes: String
+        symptoms: String
+        treatment: String
     }
 
     type Patient {
@@ -75,6 +78,12 @@ export const mutations = `
     appointmentEdit(_id: ID!, ${appointmentParams}): Appointment
     appointmentRemove(_id: ID!): String
 
-    appointmentComplete(appointmentId: ID!, diagnosis: String!): Appointment
+    appointmentComplete(
+        appointmentId: ID!
+        diagnosis: String!
+        examinationNotes: String
+        symptoms: String
+        treatment: String
+    ): Appointment
     appointmentCancel(appointmentId: ID!): Appointment
 `;

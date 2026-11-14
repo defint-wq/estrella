@@ -73,7 +73,19 @@ export const appointmentMutations = {
 
   appointmentComplete: async (
     _parent: any,
-    { appointmentId, diagnosis }: { appointmentId: string; diagnosis: string },
+    {
+      appointmentId,
+      diagnosis,
+      examinationNotes,
+      symptoms,
+      treatment,
+    }: {
+      appointmentId: string;
+      diagnosis: string;
+      examinationNotes?: string;
+      symptoms?: string;
+      treatment?: string;
+    },
     context: IContext,
   ) => {
     if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
@@ -83,17 +95,25 @@ export const appointmentMutations = {
     }
 
     try {
-      const updatedAppointment =
-        await context.models.Appointments.findByIdAndUpdate(
-          appointmentId,
-          {
-            $set: {
-              status: "COMPLETED",
-              diagnosis: diagnosis,
-            },
-          },
-          { new: true },
-        );
+      const updates: {
+        status: string;
+        diagnosis: string;
+        examinationNotes?: string;
+        symptoms?: string;
+        treatment?: string;
+      } = {
+        status: "COMPLETED",
+        diagnosis: diagnosis.trim(),
+      };
+      if (examinationNotes !== undefined) updates.examinationNotes = examinationNotes.trim();
+      if (symptoms !== undefined) updates.symptoms = symptoms.trim();
+      if (treatment !== undefined) updates.treatment = treatment.trim();
+
+      const updatedAppointment = await context.models.Appointments.findByIdAndUpdate(
+        appointmentId,
+        { $set: updates },
+        { new: true },
+      );
 
       if (!updatedAppointment) {
         throw new GraphQLError("Ийм ID-тай уулзалт олдсонгүй.", {

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@apollo/client/react";
-import { UserPlus, X } from "lucide-react";
+import { AlertTriangle, UserPlus, X } from "lucide-react";
 import { PATIENT_ADD } from "../graphql/mutation/patientAdd";
 import { GET_PATIENTS } from "../graphql/query/patient";
 import { parseRegisterNumber } from "../../app/ui/registerParser";
@@ -10,12 +10,20 @@ interface PatientAddModalProps {
   onSuccess: () => void;
 }
 
+const labelClass =
+  "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9b8a73]";
+
+const inputClass =
+  "h-11 w-full rounded-xl border border-[#e8e3db] bg-white px-3.5 text-[13px] text-[#37342f] outline-none transition placeholder:text-[#b7b1a9] focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10";
+
 export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [age, setAge] = useState<number>(0);
   const [sex, setSex] = useState("MALE");
+  const [registerInvalid, setRegisterInvalid] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const [addPatient, { loading }] = useMutation(PATIENT_ADD, {
     refetchQueries: [
@@ -24,36 +32,50 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
         variables: { page: 1, perPage: 10 },
       },
     ],
-    onCompleted: () => {
-      alert("Үйлчлүүлэгч амжилттай бүртгэгдлээ!");
-      onSuccess();
-    },
-    onError: (err) => {
-      alert("Үйлчлүүлэгч бүртгэхэд алдаа гарлаа: " + err.message);
-    },
+    onCompleted: () => onSuccess(),
+    onError: (err) => setErrorMsg("Үйлчлүүлэгч бүртгэхэд алдаа гарлаа: " + err.message),
   });
 
-  // Регистр бичих бүрт ажиллаж, таны функцийг дуудах хэсэг
-  const handleRegisterChange = (value: string) => {
-    const uppercaseValue = value.toUpperCase();
-    setRegistrationNumber(uppercaseValue);
+  // Esc дарахад хаах
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
-    // Зөвхөн 10 тэмдэгт гүйцмэгц таны parseRegisterNumber функцийг ажиллуулна
-    if (uppercaseValue.length === 10) {
-      const result = parseRegisterNumber(uppercaseValue);
+  const handleRegisterChange = (value: string) => {
+    const upper = value.toUpperCase();
+    setRegistrationNumber(upper);
+    setErrorMsg("");
+
+    if (upper.length === 10) {
+      const result = parseRegisterNumber(upper);
       if (result) {
-        setAge(result.age); // Таны функцээс ирсэн насыг онооно
-        setSex(result.sex); // Таны функцээс ирсэн хүйсийг онооно
+        setAge(result.age);
+        setSex(result.sex);
+        setRegisterInvalid(false);
+      } else {
+        setAge(0);
+        setRegisterInvalid(true);
       }
+    } else {
+      // Дугаар засагдаж байхад хуучин нас, хүйс үлдэхгүй
+      setAge(0);
+      setRegisterInvalid(false);
     }
   };
 
+  const canSubmit =
+    !loading && age > 0 && firstName.trim() !== "" && lastName.trim() !== "";
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit) return;
+    setErrorMsg("");
     addPatient({
       variables: {
-        firstName,
-        lastName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         registrationNumber,
         age: Number(age),
         sex,
@@ -62,109 +84,144 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
-        
-        <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-indigo-600" />
-            Шинэ үйлчлүүлэгч бүртгэх
-          </h3>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
-            <X className="w-5 h-5" />
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-[#2b2a26]/40 backdrop-blur-[2px] sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Шинэ үйлчлүүлэгч бүртгэх"
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[28px] border border-[#e9e5de] bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_20px_60px_rgba(60,52,41,0.2)] sm:rounded-[24px]"
+      >
+        {/* Гарчиг */}
+        <div className="mb-5 flex items-center justify-between border-b border-[#f0ede8] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#f5f2ed] text-[#927f64]">
+              <UserPlus size={17} />
+            </div>
+            <div>
+              <h3 className="text-[14px] font-semibold tracking-[-0.02em] text-[#34362f]">
+                Шинэ үйлчлүүлэгч бүртгэх
+              </h3>
+              <p className="mt-0.5 text-[10px] text-[#9b968d]">
+                Нас, хүйс регистрээс автоматаар тодорно
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Хаах"
+            className="rounded-lg p-1.5 text-[#aaa49b] transition hover:bg-[#f4f1ec] hover:text-[#554c3e]"
+          >
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Овог</label>
+              <label htmlFor="patient-last" className={labelClass}>Овог</label>
               <input
+                id="patient-last"
                 type="text"
                 required
+                autoFocus
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Нэр</label>
+              <label htmlFor="patient-first" className={labelClass}>Нэр</label>
               <input
+                id="patient-first"
                 type="text"
                 required
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className={inputClass}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Регистрийн дугаар</label>
+            <label htmlFor="patient-reg" className={labelClass}>Регистрийн дугаар</label>
             <input
+              id="patient-reg"
               type="text"
               required
               maxLength={10}
               placeholder="Жишээ: АА12345678"
               value={registrationNumber}
               onChange={(e) => handleRegisterChange(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className={`${inputClass} uppercase tracking-wide ${
+                registerInvalid ? "border-rose-300 bg-rose-50/40 focus:border-rose-400 focus:ring-rose-200/50" : ""
+              }`}
             />
+            {registerInvalid && (
+              <p role="alert" className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-rose-700">
+                <AlertTriangle size={13} /> Регистрийн дугаар буруу байна.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Нас</label>
-              <input
-                type="number"
-                required
-                readOnly
-                value={age || ""}
-                className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none cursor-not-allowed"
-              />
+              <span className={labelClass}>Нас</span>
+              <div className="flex h-11 items-center rounded-xl border border-[#e8e3db] bg-[#f7f6f3] px-3.5 text-[13px] font-semibold text-[#49463f]">
+                {age > 0 ? age : <span className="font-normal text-[#b7b1a9]">—</span>}
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Хүйс</label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-gray-50 border border-gray-200/60 rounded-xl">
-                <button
-                  type="button"
-                  disabled
-                  className={`py-1.5 text-sm font-bold rounded-lg transition-all ${
-                    sex === "MALE"
-                      ? "bg-white text-blue-600 shadow-sm border border-blue-50"
-                      : "text-gray-300"
-                  }`}
-                >
-                  Эр
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  className={`py-1.5 text-sm font-bold rounded-lg transition-all ${
-                    sex === "FEMALE"
-                      ? "bg-white text-pink-600 shadow-sm border border-pink-50"
-                      : "text-gray-300"
-                  }`}
-                >
-                  Эм
-                </button>
+              <span className={labelClass}>Хүйс</span>
+              <div className="grid h-11 grid-cols-2 gap-1 rounded-xl border border-[#e8e3db] bg-[#f7f6f3] p-1">
+                {[
+                  { value: "MALE", label: "Эр" },
+                  { value: "FEMALE", label: "Эм" },
+                ].map((opt) => {
+                  const selected = age > 0 && sex === opt.value;
+                  return (
+                    <div
+                      key={opt.value}
+                      aria-label={opt.label}
+                      aria-current={selected}
+                      className={`flex items-center justify-center rounded-lg text-[12px] font-medium transition ${
+                        selected
+                          ? "bg-white text-[#34362f] shadow-[0_1px_6px_rgba(57,50,40,0.1)]"
+                          : "text-[#c4beb4]"
+                      }`}
+                    >
+                      {opt.label}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          <div className="pt-2 flex gap-3">
+          {errorMsg && (
+            <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11px] font-medium text-rose-700">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Үйлдэл */}
+          <div className="flex gap-3 border-t border-[#f0ede8] pt-5">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50"
+              className="flex-1 rounded-xl border border-[#e9e4dc] py-3 text-[12px] font-medium text-[#777168] transition hover:bg-[#f8f6f2]"
             >
               Цуцлах
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:bg-indigo-400"
+              disabled={!canSubmit}
+              className="flex-1 rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:bg-[#d9d5cc] disabled:text-[#9a948a] disabled:shadow-none"
             >
               {loading ? "Бүртгэж байна..." : "Бүртгэх"}
             </button>

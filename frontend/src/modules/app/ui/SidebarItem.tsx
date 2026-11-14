@@ -1,27 +1,43 @@
+import { isValidElement } from "react";
 import { NavLink } from "react-router-dom";
-import { LucideIcon } from "lucide-react";
 
-interface SidebarItemProps {
+type Props = {
   path: string;
-  icon: LucideIcon;
   label: string;
+  icon: React.ElementType | React.ReactNode;
   onClick?: () => void;
-}
+};
 
-export const SidebarItem = ({ path, icon: Icon, label, onClick }: SidebarItemProps) => (
-  <NavLink
-    to={path}
-    end={path === "/"} 
-    onClick={onClick}
-    className={({ isActive }) =>
-      `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-        isActive 
-          ? "bg-indigo-50 text-indigo-600 font-bold" 
-          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-      }`
+export const SidebarItem = ({ path, label, icon, onClick }: Props) => {
+  const renderIcon = (active: boolean) => {
+    if (isValidElement(icon)) return icon;
+    if (typeof icon === "function" || (typeof icon === "object" && icon && "render" in icon)) {
+      const Icon = icon as React.ElementType;
+      return <Icon size={18} strokeWidth={active ? 1.9 : 1.65} />;
     }
-  >
-    <Icon size={20} />
-    <span>{label}</span>
-  </NavLink>
-);
+    return icon;
+  };
+
+  return (
+    <NavLink
+      to={path}
+      end={path === "/"}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `group flex items-center gap-3.5 rounded-2xl px-4 py-3.5 transition ${
+          isActive
+            ? "bg-white text-[#34362f] shadow-[0_2px_12px_rgba(57,50,40,0.05)]"
+            : "text-[#817b71] hover:bg-white/60 hover:text-[#45413b]"
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {renderIcon(isActive)}
+          <span className="flex-1 text-sm font-medium">{label}</span>
+          {isActive && <span className="size-1.5 rounded-full bg-[#a48663]" />}
+        </>
+      )}
+    </NavLink>
+  );
+};

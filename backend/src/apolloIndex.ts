@@ -1,6 +1,5 @@
 import { ApolloServer } from "@apollo/server";
 import { GraphQLDateTime } from "graphql-scalars";
-// 👇 Доорх import-уудын төгсгөлд .js өргөтгөл нэмэв:
 import { mutations, queries, types } from "./graphql/schemas/patients.js";
 import { IContext } from "../connectionResolver.js";
 import { patientQueries } from "./graphql/queries/patients.js";

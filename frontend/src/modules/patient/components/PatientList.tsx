@@ -1,16 +1,33 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
-  User,
-  Heart,
-  Plus,
-  History,
-  ChevronUp,
-  ChevronDown,
+  Check, ChevronDown, ChevronUp, History, Plus, Search, User, UserRound,
 } from "lucide-react";
 import { GET_PATIENTS } from "../graphql/query/patient";
-import { AppointmentList } from "./AppointmentList"; // Дээрх компонентыг импортлох
+import { AppointmentList } from "./AppointmentList";
 import { AppointmentModal } from "./AppointentModal";
+
+interface PatientAppointment {
+  _id: string;
+  status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+  startTime: string;
+  endTime: string;
+  doctorName: string;
+  diagnosis?: string;
+  examinationNotes?: string;
+  symptoms?: string;
+  treatment?: string;
+}
+
+interface Patient {
+  _id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  registrationNumber?: string | null;
+  age?: number | null;
+  sex?: "MALE" | "FEMALE" | string | null;
+  appointments?: PatientAppointment[] | null;
+}
 
 interface PatientListProps {
   searchQuery: string;
@@ -18,132 +35,165 @@ interface PatientListProps {
   perPage: number;
 }
 
-export const PatientList = ({
-  searchQuery,
-  page,
-  perPage,
-}: PatientListProps) => {
+export const PatientList = ({ searchQuery, page, perPage }: PatientListProps) => {
   const { data, loading, error, refetch } = useQuery(GET_PATIENTS, {
     variables: { page, perPage },
   });
 
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
-    null,
-  );
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [activeHistoryPatientId, setActiveHistoryPatientId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
-  // Доошоо түүхээ дэлгэж харах өвчтөний ID-г хадгалах state
-  const [activeHistoryPatientId, setActiveHistoryPatientId] = useState<
-    string | null
-  >(null);
+  const patients: Patient[] = data?.patients?.list || [];
 
-  if (loading)
-    return <div className="text-center p-8 text-gray-500">Уншиж байна...</div>;
-  if (error)
+  const filteredPatients = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return patients;
+    return patients.filter((p) => {
+      const fullName = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+      const reg = p.registrationNumber?.toLowerCase() ?? "";
+      return fullName.includes(q) || reg.includes(q);
+    });
+  }, [patients, searchQuery]);
+
+  const toggleHistory = (id: string) =>
+    setActiveHistoryPatientId((current) => (current === id ? null : id));
+
+  if (loading) {
     return (
-      <div className="text-center p-8 text-red-500">Алдаа: {error.message}</div>
+      <div className="grid gap-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-[92px] animate-pulse rounded-[20px] border border-[#ece8e1] bg-white" />
+        ))}
+        <p className="pt-1 text-center text-[11px] text-[#9b968d]">
+          Уншиж байна... Сервер унтсан байвал асахад 30–60 секунд хүлээнэ үү.
+        </p>
+      </div>
     );
+  }
 
-  const patients = data?.patients?.list || [];
-
-  const filteredPatients = patients.filter((patient) => {
-    const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
-    const regNumber = patient.registrationNumber?.toLowerCase() || "";
+  if (error) {
     return (
-      fullName.includes(searchQuery.toLowerCase()) ||
-      regNumber.includes(searchQuery.toLowerCase())
+      <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-6 text-center text-[12px] text-rose-700">
+        Алдаа: {error.message}
+      </div>
     );
-  });
-
-  // Түүх харах товчлуур дээр дарахад нээж/хаах функц
-  const toggleHistory = (patientId: string) => {
-    if (activeHistoryPatientId === patientId) {
-      setActiveHistoryPatientId(null); // Нээлттэй байвал хаана
-    } else {
-      setActiveHistoryPatientId(patientId); // Хаалттай байвал нээнэ
-    }
-  };
+  }
 
   return (
-    <div className="grid gap-4 p-4 md:p-0">
-      {filteredPatients.map((patient) => (
-        <div
-          key={patient._id}
-          className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm group transition-all"
-        >
-          <div className="flex items-start md:items-center gap-4 flex-col md:flex-row">
-            <div
-              className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold border ${
-                patient.sex === "MALE"
-                  ? "bg-blue-50 text-blue-600 border-blue-100"
-                  : "bg-pink-50 text-pink-600 border-pink-100"
-              }`}
-            >
-              {patient.firstName ? patient.firstName[0] : "P"}
-            </div>
+    <div className="grid gap-3">
+      {notice && (
+        <div role="status" className="flex items-center gap-2 rounded-xl border border-[#dce6da] bg-[#f3f7f1] px-4 py-3 text-[12px] text-[#597052]">
+          <Check size={15} /> {notice}
+        </div>
+      )}
 
-            <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-bold text-gray-900">
-                  {patient.lastName} {patient.firstName}
-                </h3>
-                <span className="text-xs px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full">
-                  {patient.age} нас
-                </span>
-              </div>
-              <div className="flex items-center gap-4 mt-1.5 text-gray-500 text-xs font-semibold">
-                <div className="flex items-center gap-1">
-                  <User className="w-3.5 h-3.5" /> ID:{" "}
-                  <span className="text-gray-700 uppercase">
-                    {patient.registrationNumber}
-                  </span>
-                </div>
-                {patient.sex && (
-                  <div className="flex items-center gap-1">
-                    <Heart className="w-3.5 h-3.5" />{" "}
-                    {patient.sex === "MALE" ? "Эр" : "Эм"}
-                  </div>
-                )}
-              </div>
-            </div>
+      {filteredPatients.length === 0 && (
+        <div className="flex flex-col items-center gap-2 rounded-[20px] border border-dashed border-[#e4dfd6] bg-[#fbfaf8] py-12 text-center">
+          <Search size={20} className="text-[#b5ab98]" />
+          <p className="text-[12px] text-[#9b968d]">
+            {searchQuery.trim()
+              ? "Хайлтад тохирох үйлчлүүлэгч олдсонгүй."
+              : "Бүртгэлтэй үйлчлүүлэгч одоогоор байхгүй байна."}
+          </p>
+        </div>
+      )}
 
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              {/* ДООШОО ДЭЛГЭХ "ТҮҮХ ХАРАХ" ТОВЧЛУУР */}
-              <button
-                onClick={() => toggleHistory(patient._id)}
-                className={`flex flex-1 md:flex-none items-center justify-center gap-1.5 px-4 py-2 border rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeHistoryPatientId === patient._id
-                    ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                    : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+      {filteredPatients.map((patient) => {
+        const isOpen = activeHistoryPatientId === patient._id;
+        const scheduledCount =
+          patient.appointments?.filter((a) => a.status === "SCHEDULED").length ?? 0;
+        const isMale = patient.sex === "MALE";
+
+        return (
+          <div
+            key={patient._id}
+            className="rounded-[20px] border border-[#e9e5de] bg-white p-5 shadow-[0_4px_22px_rgba(60,52,41,0.035)] transition hover:border-[#ddd6c9] sm:p-6"
+          >
+            <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
+              {/* Avatar */}
+              <div
+                className={`flex size-12 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold ${
+                  isMale ? "bg-[#dce4dc] text-[#526458]" : "bg-[#e7dfeb] text-[#695a70]"
                 }`}
               >
-                <History className="w-4 h-4" />
-                <span> Үзлэгүүд </span>
-                {activeHistoryPatientId === patient._id ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
+                {patient.firstName ? patient.firstName[0].toUpperCase() : "P"}
+              </div>
 
-              {/* ЦАГ ӨГӨХ ТОВЧЛУУР */}
-              <button
-                onClick={() => setSelectedPatientId(patient._id)}
-                className="flex flex-1 md:flex-none items-center justify-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Цаг өгөх</span>
-              </button>
+              {/* Мэдээлэл */}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-[#34362f]">
+                    {patient.lastName} {patient.firstName}
+                  </h3>
+                  {patient.age != null && (
+                    <span className="rounded-full bg-[#f4f1ec] px-2.5 py-0.5 text-[10px] font-medium text-[#8b8173]">
+                      {patient.age} нас
+                    </span>
+                  )}
+                  {scheduledCount > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f6f0e6] px-2.5 py-0.5 text-[10px] font-medium text-[#987b53]">
+                      <span className="size-1.5 rounded-full bg-[#bd9a68]" />
+                      {scheduledCount} товлосон
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#9b968d]">
+                  <span className="flex items-center gap-1.5">
+                    <User size={13} className="text-[#b5ab98]" />
+                    <span className="uppercase tracking-wide text-[#5f594f]">
+                      {patient.registrationNumber}
+                    </span>
+                  </span>
+                  {patient.sex && (
+                    <span className="flex items-center gap-1.5">
+                      <UserRound size={13} className="text-[#b5ab98]" />
+                      <span className="text-[#5f594f]">{isMale ? "Эр" : "Эм"}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Үйлдэл */}
+              <div className="flex w-full items-center gap-2 md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => toggleHistory(patient._id)}
+                  aria-expanded={isOpen}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-[11px] font-medium transition md:flex-none ${
+                    isOpen
+                      ? "border-[#e3d6bd] bg-[#fbf7f0] text-[#7d6540]"
+                      : "border-[#e9e4dc] bg-white text-[#777168] hover:bg-[#f8f6f2]"
+                  }`}
+                >
+                  <History size={14} />
+                  <span>Үзлэгүүд</span>
+                  {isOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedPatientId(patient._id)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-stone-700 px-4 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 active:scale-95 md:flex-none"
+                >
+                  <Plus size={14} />
+                  <span>Цаг өгөх</span>
+                </button>
+              </div>
             </div>
+
+            {isOpen && (
+              <AppointmentList
+                appointments={patient.appointments || []}
+                patientName={`${patient.lastName ?? ""} ${patient.firstName ?? ""}`.trim()}
+                registrationNumber={patient.registrationNumber ?? ""}
+              />
+            )}
           </div>
+        );
+      })}
 
-          {/* ТОВЧЛУУР ДАРАГДСАН ҮЕД ЯГ КАРТ ДОТОР НЬ БҮХ ҮЗЛЭГИЙГ ДЭЛГЭЖ ХАРУУЛАХ ХЭСЭГ */}
-          {activeHistoryPatientId === patient._id && (
-            <AppointmentList appointments={patient.appointments || []} />
-          )}
-        </div>
-      ))}
-
-      {/* ЦАГ ӨГӨХ МОДАЛ */}
       {selectedPatientId && (
         <AppointmentModal
           patientId={selectedPatientId}
@@ -151,6 +201,8 @@ export const PatientList = ({
           onSuccess={() => {
             setSelectedPatientId(null);
             refetch();
+            setNotice("Цаг амжилттай товлогдлоо.");
+            window.setTimeout(() => setNotice(""), 3200);
           }}
         />
       )}
