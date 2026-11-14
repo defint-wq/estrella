@@ -129,9 +129,6 @@ export const HomeLayout = () => {
               <h1 className="text-[25px] font-medium tracking-[-0.04em] text-[#36342f] sm:text-[30px]">
                 Үзлэгийн жагсаалт
               </h1>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-[#89847b]">
-                Товлосон болон дууссан үзлэгүүдээ удирдах.
-              </p>
             </div>
           </div>
 

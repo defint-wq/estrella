@@ -27,9 +27,6 @@ export const PatientHeader = ({ count, action }: PatientHeaderProps) => {
               </span>
             )}
           </h1>
-          <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-[#89847b]">
-            Системд бүртгэлтэй нийт үйлчлүүлэгчдийн мэдээлэл, үзлэгийн явц болон цаг захиалга.
-          </p>
         </div>
       </div>
 
