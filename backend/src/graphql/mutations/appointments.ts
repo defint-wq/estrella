@@ -1,15 +1,30 @@
 import { GraphQLError } from "graphql";
 import mongoose from "mongoose";
 import { IContext } from "../../../connectionResolver.js"; // 👈 .js өргөтгөл нэмэв
+import { requireRoles } from "../../auth/session.js";
+
+interface AppointmentAddArgs {
+  patientId: string;
+  doctorId: string;
+  startTime: string;
+  endTime: string;
+  diagnosis?: string;
+}
 
 export const appointmentMutations = {
   appointmentAdd: async (
-    _parent: any,
-    { patientId, startTime, endTime, doctorName, status, diagnosis }: any,
+    _parent: unknown,
+    { patientId, doctorId, startTime, endTime, diagnosis }: AppointmentAddArgs,
     context: IContext,
   ) => {
+    requireRoles(context.authUser, "ADMIN", "RECEPTION");
     if (!mongoose.Types.ObjectId.isValid(patientId)) {
       throw new GraphQLError("Ирүүлсэн өвчтөний ID-ийн формат буруу байна.", {
+        extensions: { code: "BAD_USER_INPUT" },
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(doctorId)) {
+      throw new GraphQLError("Эмчийн ID буруу байна.", {
         extensions: { code: "BAD_USER_INPUT" },
       });
     }
@@ -46,13 +61,23 @@ export const appointmentMutations = {
           },
         );
       }
+      const doctor = await context.models.Employees.findOne({
+        _id: doctorId,
+        role: "DOCTOR",
+      });
+      if (!doctor) {
+        throw new GraphQLError("Сонгосон эмч олдсонгүй.", {
+          extensions: { code: "NOT_FOUND" },
+        });
+      }
 
       const newAppointment = await context.models.Appointments.create({
         patientId,
+        doctorId,
         startTime,
         endTime,
-        doctorName,
         status: "SCHEDULED",
+        doctorName: doctor.name,
         diagnosis,
       });
 
@@ -61,7 +86,7 @@ export const appointmentMutations = {
       });
 
       return newAppointment;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof GraphQLError) throw error;
 
       console.error("Appointment үүсгэхэд алдаа гарлаа:", error);
@@ -72,7 +97,7 @@ export const appointmentMutations = {
   },
 
   appointmentComplete: async (
-    _parent: any,
+    _parent: unknown,
     {
       appointmentId,
       diagnosis,
@@ -88,6 +113,7 @@ export const appointmentMutations = {
     },
     context: IContext,
   ) => {
+    requireRoles(context.authUser, "ADMIN", "DOCTOR");
     if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
       throw new GraphQLError("Ирүүлсэн уулзалтын ID-ийн формат буруу байна.", {
         extensions: { code: "BAD_USER_INPUT" },
@@ -95,6 +121,17 @@ export const appointmentMutations = {
     }
 
     try {
+      const currentAppointment = await context.models.Appointments.findById(
+        appointmentId,
+      );
+      if (
+        context.authUser?.role === "DOCTOR" &&
+        currentAppointment?.doctorId.toString() !== context.authUser._id
+      ) {
+        throw new GraphQLError("You are not authorized to perform this action.", {
+          extensions: { code: "FORBIDDEN" },
+        });
+      }
       const updates: {
         status: string;
         diagnosis: string;
@@ -122,7 +159,7 @@ export const appointmentMutations = {
       }
 
       return updatedAppointment;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof GraphQLError) throw error;
 
       console.error("Үзлэг дуусгахад алдаа гарлаа:", error);
@@ -133,10 +170,11 @@ export const appointmentMutations = {
   },
 
   appointmentCancel: async (
-    _parent: any,
+    _parent: unknown,
     { appointmentId }: { appointmentId: string },
     context: IContext,
   ) => {
+    requireRoles(context.authUser, "ADMIN", "RECEPTION", "DOCTOR");
     if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
       throw new GraphQLError("Ирүүлсэн уулзалтын ID-ийн формат буруу байна.", {
         extensions: { code: "BAD_USER_INPUT" },
@@ -144,6 +182,17 @@ export const appointmentMutations = {
     }
 
     try {
+      const currentAppointment = await context.models.Appointments.findById(
+        appointmentId,
+      );
+      if (
+        context.authUser?.role === "DOCTOR" &&
+        currentAppointment?.doctorId.toString() !== context.authUser._id
+      ) {
+        throw new GraphQLError("You are not authorized to perform this action.", {
+          extensions: { code: "FORBIDDEN" },
+        });
+      }
       const updatedAppointment =
         await context.models.Appointments.findByIdAndUpdate(
           appointmentId,
@@ -158,7 +207,7 @@ export const appointmentMutations = {
       }
 
       return updatedAppointment;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof GraphQLError) throw error;
 
       console.error("Уулзалт цуцлахад алдаа гарлаа:", error);

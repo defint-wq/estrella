@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { ArrowLeft, KeyRound, Stethoscope } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { KeyRound, Stethoscope } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../modules/auth/AuthContext";
 
 export const LoginPage = () => {
-  const { user, login } = useAuth();
+  const { user, loading, authError, login } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -17,10 +17,11 @@ export const LoginPage = () => {
   const redirectTo =
     requestedPath?.startsWith("/") && !requestedPath.startsWith("//")
       ? requestedPath
-      : "/profile";
+      : "/home";
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (loading) return;
     if (!username.trim()) {
       setError("Нэвтрэх нэрээ оруулна уу.");
       return;
@@ -30,40 +31,48 @@ export const LoginPage = () => {
       return;
     }
 
-    login(username);
-    navigate(redirectTo, { replace: true });
+    try {
+      await login(username, password);
+      navigate(redirectTo, { replace: true });
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Нэвтрэхэд алдаа гарлаа.",
+      );
+    }
   };
 
   return (
-    <main className="flex min-h-full items-center justify-center overflow-y-auto bg-[#f7f6f3] px-5 py-10">
-      <section className="w-full max-w-md rounded-3xl border border-[#e9e3d9] bg-white p-7 shadow-[0_12px_40px_rgba(70,58,43,0.06)] sm:p-9">
-        <Link
-          to="/profile"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[#81796d] transition hover:text-[#514a40]"
-        >
-          <ArrowLeft size={16} />
-          Эмчийн мэдээлэл рүү буцах
-        </Link>
-
-        <div className="mt-8 flex size-12 items-center justify-center rounded-2xl bg-[#f3f0ea] text-[#81735f]">
-          <Stethoscope size={22} strokeWidth={1.8} />
+    <main className="flex min-h-screen items-center justify-center overflow-y-auto bg-[#FAF8F5] px-5 py-10 text-stone-900">
+      <section className="w-full max-w-md rounded-3xl border border-stone-200/80 bg-white p-7 shadow-[0_12px_40px_rgba(70,58,43,0.07)] sm:p-9">
+        <div className="flex items-center gap-3">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-stone-100 text-stone-700">
+            <Stethoscope size={22} strokeWidth={1.8} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+              Clinic portal
+            </p>
+            <p className="mt-1 text-sm font-semibold tracking-tight text-stone-900">
+              Эмнэлгийн ажилтны систем
+            </p>
+          </div>
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-[#39362f]">
+        <h1 className="mt-7 text-2xl font-semibold tracking-tight text-stone-900">
           Нэвтрэх
         </h1>
-        <p className="mt-2 text-sm leading-6 text-[#89847b]">
-          Эмчийн мэдээлэл болон үзлэгийн хуваариа харахын тулд нэвтэрнэ үү.
+        <p className="mt-2 text-sm leading-6 text-stone-500">
+          Ажилтны мэдээлэл болон үзлэгийн хуваариа харахын тулд нэвтэрнэ үү.
         </p>
 
         {user ? (
-          <div className="mt-7 rounded-2xl border border-[#e9e3d9] bg-[#faf8f5] p-5">
-            <p className="text-sm text-[#5b554c]">
+          <div className="mt-7 rounded-2xl border border-stone-200 bg-[#FAF8F5] p-5">
+            <p className="text-sm text-stone-600">
               Та <strong>{user.username}</strong> нэрээр нэвтэрсэн байна.
             </p>
             <button
               type="button"
-              onClick={() => navigate("/profile", { replace: true })}
-              className="mt-4 w-full rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25"
+              onClick={() => navigate("/home", { replace: true })}
+              className="mt-4 w-full rounded-2xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-700 focus:outline-none focus:ring-4 focus:ring-stone-500/25"
             >
               Профайл руу үргэлжлүүлэх
             </button>
@@ -71,13 +80,13 @@ export const LoginPage = () => {
         ) : (
           <form onSubmit={handleSubmit} className="mt-7 space-y-5">
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[#514a40]">
+              <span className="mb-2 block text-sm font-semibold text-stone-700">
                 Нэвтрэх нэр
               </span>
               <input
                 autoComplete="username"
                 autoFocus
-                className="w-full rounded-xl border border-[#e6e0d6] bg-[#fdfcfb] px-4 py-3 text-sm text-[#39362f] outline-none transition placeholder:text-[#aaa397] focus:border-[#a99b85] focus:ring-4 focus:ring-[#a99b85]/15"
+                className="h-12 w-full rounded-2xl border border-stone-200 bg-[#FAF8F5] px-4 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-900/5"
                 onChange={(event) => {
                   setUsername(event.target.value);
                   setError(null);
@@ -89,12 +98,12 @@ export const LoginPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[#514a40]">
+              <span className="mb-2 block text-sm font-semibold text-stone-700">
                 Нууц үг
               </span>
               <input
                 autoComplete="current-password"
-                className="w-full rounded-xl border border-[#e6e0d6] bg-[#fdfcfb] px-4 py-3 text-sm text-[#39362f] outline-none transition placeholder:text-[#aaa397] focus:border-[#a99b85] focus:ring-4 focus:ring-[#a99b85]/15"
+                className="h-12 w-full rounded-2xl border border-stone-200 bg-[#FAF8F5] px-4 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-900/5"
                 onChange={(event) => {
                   setPassword(event.target.value);
                   setError(null);
@@ -106,22 +115,22 @@ export const LoginPage = () => {
               />
             </label>
 
-            {error && (
-              <p className="text-sm font-medium text-[#a64f45]" role="alert">
-                {error}
+            {(error || authError) && (
+              <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800" role="alert">
+                {error || authError}
               </p>
             )}
 
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-stone-900 px-5 py-3 text-sm font-semibold tracking-wide text-white shadow-sm transition hover:bg-stone-700 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <KeyRound size={17} />
               Нэвтрэх
             </button>
-            <p className="text-center text-xs leading-5 text-[#a19a8f]">
-              Frontend demo: дурын нэвтрэх нэр, нууц үг оруулж үргэлжлүүлнэ.
-              Нэвтрэх мэдээлэл backend рүү илгээгдэхгүй.
+            <p className="text-center text-xs leading-5 text-stone-500">
+              Нэвтрэх мэдээлэл хамгаалагдсан холболтоор илгээгдэнэ.
             </p>
           </form>
         )}

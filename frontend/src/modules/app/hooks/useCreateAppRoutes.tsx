@@ -8,6 +8,8 @@ import {
 import { lazy, Suspense } from "react";
 import { MainLayout } from "../components/MainLayout";
 import { PatientRoutes } from "../components/PatientRoutes";
+import { ProtectedRoute } from "../../auth/ProtectedRoute";
+import { RoleGuard } from "../../auth/RoleGuard";
 
 const HomeLayout = lazy(() =>
   import("../../../pages/home/HomeLayout").then((module) => ({
@@ -27,15 +29,21 @@ const CompletedAppointments = lazy(() =>
   })),
 );
 
-const DoctorProfilePage = lazy(() =>
-  import("../../../pages/profile/DoctorProfilePage").then((module) => ({
-    default: module.DoctorProfilePage,
+const ProfilePage = lazy(() =>
+  import("../../../pages/profile/ProfilePage").then((module) => ({
+    default: module.ProfilePage,
   })),
 );
 
 const LoginPage = lazy(() =>
   import("../../../pages/auth/LoginPage").then((module) => ({
     default: module.LoginPage,
+  })),
+);
+
+const AdminDashboard = lazy(() =>
+  import("../../../pages/admin/AdminDashboard").then((module) => ({
+    default: module.AdminDashboard,
   })),
 );
 
@@ -50,52 +58,65 @@ export const useCreateAppRouter = () => {
     return createBrowserRouter(
       createRoutesFromElements(
         <Route>
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Navigate to="/home/pending" replace />} />
-            <Route
-              path="/home"
-              element={
-                <Suspense fallback={<HomeFallback />}>
-                  <HomeLayout />
-                </Suspense>
-              }
-            >
-              <Route index element={<Navigate to="pending" replace />} />
+          <Route path="/login" element={
+            <Suspense fallback={<HomeFallback />}>
+              <LoginPage />
+            </Suspense>
+          } />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Navigate to="/home/pending" replace />} />
               <Route
-                path="pending"
+                path="/home"
                 element={
                   <Suspense fallback={<HomeFallback />}>
-                    <PendingAppointments />
+                    <HomeLayout />
+                  </Suspense>
+                }
+              >
+                <Route index element={<Navigate to="pending" replace />} />
+                <Route
+                  path="pending"
+                  element={
+                    <Suspense fallback={<HomeFallback />}>
+                      <PendingAppointments />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="completed"
+                  element={
+                    <Suspense fallback={<HomeFallback />}>
+                      <CompletedAppointments />
+                    </Suspense>
+                  }
+                />
+              </Route>
+              <Route element={<RoleGuard allowedRoles={["ADMIN", "RECEPTION", "DOCTOR"]} />}>
+                <Route path="/patients" element={<PatientRoutes />} />
+              </Route>
+              <Route
+                path="/profile"
+                element={
+                  <Suspense fallback={<HomeFallback />}>
+                    <ProfilePage />
                   </Suspense>
                 }
               />
-              <Route
-                path="completed"
-                element={
-                  <Suspense fallback={<HomeFallback />}>
-                    <CompletedAppointments />
-                  </Suspense>
-                }
-              />
+              <Route element={<RoleGuard allowedRoles={["ADMIN"]} />}>
+                <Route
+                  path="/admin"
+                  element={
+                    <Suspense fallback={<HomeFallback />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  }
+                />
+              </Route>
+              <Route path="*" element={<Navigate to="/home" replace />} />
             </Route>
-            <Route path="/patients" element={<PatientRoutes />} />
-            <Route
-              path="/profile"
-              element={
-                <Suspense fallback={<HomeFallback />}>
-                  <DoctorProfilePage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/auth/login"
-              element={
-                <Suspense fallback={<HomeFallback />}>
-                  <LoginPage />
-                </Suspense>
-              }
-            />
           </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Route>,
       ),
     );

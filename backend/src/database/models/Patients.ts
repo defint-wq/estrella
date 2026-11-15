@@ -1,11 +1,17 @@
 import mongoose, { Model } from "mongoose";
+import type { Types } from "mongoose";
 import type { IPatient, IPatientDocument } from "../../../@types/Patient.js";
 import type { IModels } from "../../../connectionResolver.js";
 import { patientSchema } from "../definition/patients.js";
 import { createPatientSearchFilter } from "../../utils/search.js";
 
 export interface IPatientModel extends Model<IPatientDocument> {
-  getPatients(skip: number, limit: number, search?: string): Promise<IPatientDocument[]>;
+  getPatients(
+    skip: number,
+    limit: number,
+    search?: string,
+    patientIds?: (Types.ObjectId | string)[],
+  ): Promise<IPatientDocument[]>;
   createPatient(doc: IPatient): Promise<IPatientDocument>;
   updatePatient(
     _id: string,
@@ -21,13 +27,19 @@ export const loadPatientClass = (model: IModels) => {
       skip: number,
       limit: number,
       search?: string,
+      patientIds?: (Types.ObjectId | string)[],
     ) {
       // mongoose.model-оор шууд дуудах нь Circular Dependency-ээс сэргийлнэ
       const PatientModel = mongoose.model<IPatientDocument, IPatientModel>(
         "Patients",
       );
 
-      return await PatientModel.find(createPatientSearchFilter(search))
+      const searchFilter = createPatientSearchFilter(search);
+      const filter = patientIds
+        ? { ...searchFilter, _id: { $in: patientIds } }
+        : searchFilter;
+
+      return await PatientModel.find(filter)
         .populate({
           path: "appointments",
           options: { sort: { startTime: -1 } },

@@ -3,6 +3,7 @@ import {
   createPatientSearchFilter,
   createSearchRegex,
 } from "../../utils/search.js";
+import { requireRoles } from "../../auth/session.js";
 
 interface AppointmentSearchArgs {
   page?: number;
@@ -17,6 +18,7 @@ export const appointmentQueries = {
     args: AppointmentSearchArgs,
     context: IContext,
   ) => {
+    requireRoles(context.authUser, "ADMIN", "RECEPTION", "DOCTOR");
     const page = Math.max(args.page ?? 1, 1);
     const perPage = Math.max(args.perPage ?? 10, 1);
     const searchRegex = createSearchRegex(args.search);
@@ -43,9 +45,12 @@ export const appointmentQueries = {
           }
         : {};
 
-      const filter = args.status
-        ? { ...searchFilter, status: args.status }
-        : searchFilter;
+      const conditions: Record<string, unknown>[] = [searchFilter];
+      if (args.status) conditions.push({ status: args.status });
+      if (context.authUser?.role === "DOCTOR") {
+        conditions.push({ doctorId: context.authUser._id });
+      }
+      const filter = { $and: conditions };
 
       const [totalCount, appointments] = await Promise.all([
         context.models.Appointments.countDocuments(filter),
@@ -91,6 +96,7 @@ export const appointmentQueries = {
     } catch (error) {
       throw new Error(
         `Үзлэгийн жагсаалт авахад алдаа гарлаа: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   },

@@ -22,6 +22,7 @@ export const GET_APPOINTMENTS: TypedDocumentNode<
     ) {
       list {
         _id
+        doctorId
         startTime
         endTime
         doctorName

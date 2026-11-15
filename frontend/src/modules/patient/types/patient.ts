@@ -1,5 +1,6 @@
 export interface Appointment {
   _id: string;
+  doctorId?: string;
   startTime: string;      // Бэкенд scalar DateTime -> Фронтенд string (ISO string)
   endTime: string;        // Бэкенд scalar DateTime -> Фронтенд string
   doctorName: string;

@@ -1,5 +1,13 @@
 {
   "rewrites": [
+    {
+      "source": "/graphql",
+      "destination": "https://estrella-9q81.onrender.com/graphql"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://estrella-9q81.onrender.com/auth/:path*"
+    },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

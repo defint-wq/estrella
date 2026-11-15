@@ -9,6 +9,7 @@ import { AppointmentModal } from "./AppointentModal";
 import { useDebouncedValue } from "../../app/hooks/useDebouncedValue";
 import { InfiniteScrollTrigger } from "../../../components/InfiniteScrollTrigger";
 import type { PatientsQuery } from "../types/patient";
+import { useAuth } from "../../auth/AuthContext";
 
 interface PatientAppointment {
   _id: string;
@@ -39,6 +40,7 @@ interface PatientListProps {
 const PATIENTS_PER_PAGE = 10;
 
 export const PatientList = ({ searchQuery }: PatientListProps) => {
+  const { user } = useAuth();
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
   const {
     data,
@@ -240,14 +242,16 @@ export const PatientList = ({ searchQuery }: PatientListProps) => {
                   {isOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedPatientId(patient._id)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-stone-700 px-4 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 active:scale-95 md:flex-none"
-                >
-                  <Plus size={14} />
-                  <span>Цаг өгөх</span>
-                </button>
+                {user?.role !== "DOCTOR" && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPatientId(patient._id)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-stone-700 px-4 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 active:scale-95 md:flex-none"
+                  >
+                    <Plus size={14} />
+                    <span>Цаг өгөх</span>
+                  </button>
+                )}
               </div>
             </div>
 

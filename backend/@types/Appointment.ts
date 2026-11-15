@@ -6,6 +6,7 @@ export type AppointmentStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED";
 // 1. Бааз руу шинээр илгээх өгөгдлийн бүтэц
 export interface IAppointment {
   patientId: Types.ObjectId | string;
+  doctorId: Types.ObjectId | string;
   startTime: Date;
   endTime: Date;
   doctorName: string;

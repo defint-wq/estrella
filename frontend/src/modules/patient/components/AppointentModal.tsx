@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { APPOINTMENT_ADD } from "../graphql/mutation/appointmentAdd";
 import { GET_PATIENTS } from "../graphql/query/patient";
+import { GET_DOCTORS } from "../graphql/query/doctors";
 
 interface AppointmentModalProps {
   patientId: string;
@@ -12,7 +13,6 @@ interface AppointmentModalProps {
   onSuccess: () => void;
 }
 
-const DOCTOR_NAME = "Мөнхцэцэг";
 const SLOT_MINUTES = 20;
 
 // toISOString() нь UTC огноо өгдөг тул өглөө эрт өчигдрийг харуулдаг байсан.
@@ -27,12 +27,21 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
   const todayStr = toLocalDateStr(new Date());
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedTime, setSelectedTime] = useState("");
+  const [doctorId, setDoctorId] = useState("");
   const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const { data: patientsData } = useQuery(GET_PATIENTS, {
     variables: { page: 1, perPage: 100 },
   });
+  const { data: doctorsData } = useQuery<{
+    employees: { _id: string; name: string }[];
+  }>(GET_DOCTORS, {
+    variables: { role: "DOCTOR" },
+  });
+  const doctors: { _id: string; name: string }[] =
+    doctorsData?.employees ?? [];
+  const selectedDoctor = doctors.find((doctor) => doctor._id === doctorId);
 
   const [addAppointment, { loading }] = useMutation(APPOINTMENT_ADD, {
     onCompleted: () => onSuccess(),
@@ -58,7 +67,11 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
       if (!patient.appointments) continue;
       for (const app of patient.appointments) {
         if (app.status === "CANCELLED") continue;
-        if (app.doctorName !== DOCTOR_NAME) continue;
+        if (
+          app.doctorId
+            ? app.doctorId !== doctorId
+            : app.doctorName !== selectedDoctor?.name
+        ) continue;
 
         const appStart = new Date(app.startTime).getTime();
         const appEnd = new Date(app.endTime).getTime();
@@ -81,7 +94,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
     }
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, patientsData]);
+  }, [selectedDate, patientsData, doctorId, selectedDoctor?.name]);
 
   const getEndTimeDisplay = () => {
     if (!selectedTime) return "--:--";
@@ -108,14 +121,14 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
         patientId,
         startTime: startISO,
         endTime: endISO,
-        doctorName: DOCTOR_NAME,
-        status: "SCHEDULED",
+        doctorId,
         diagnosis: "",
       },
     });
   };
 
-  const canSubmit = !loading && !!selectedTime && !isCurrentTimeSlotBusy;
+  const canSubmit =
+    !loading && !!doctorId && !!selectedTime && !isCurrentTimeSlotBusy;
 
   return (
     <div
@@ -155,10 +168,24 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Эмч */}
           <div>
-            <span className={labelClass}>Сонгогдсон эмч</span>
-            <div className="flex items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-[#f7f6f3] px-3.5 py-3 text-[13px] font-medium text-[#49463f]">
-              <Stethoscope size={15} className="text-[#a48663]" />
-              {DOCTOR_NAME} эмч
+            <label htmlFor="appointment-doctor" className={labelClass}>Эмч сонгох</label>
+            <div className="flex items-center gap-2.5">
+              <Stethoscope size={15} className="shrink-0 text-[#a48663]" />
+              <select
+                id="appointment-doctor"
+                required
+                value={doctorId}
+                onChange={(event) => {
+                  setDoctorId(event.target.value);
+                  setSelectedTime("");
+                }}
+                className="h-11 w-full rounded-xl border border-[#e8e3db] bg-white px-3.5 text-[13px] text-[#49463f]"
+              >
+                <option value="">Эмч сонгоно уу</option>
+                {doctors.map((doctor) => (
+                  <option key={doctor._id} value={doctor._id}>{doctor.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -202,7 +229,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
                   <button
                     key={slot.time}
                     type="button"
-                    disabled={slot.isBusy}
+                    disabled={slot.isBusy || !doctorId}
                     onClick={() => {
                       setSelectedTime(slot.time);
                       setShowTimeSlots(false);
@@ -248,7 +275,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
           {isCurrentTimeSlotBusy && (
             <div role="alert" className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11px] font-medium text-rose-700">
               <AlertTriangle size={15} className="shrink-0" />
-              {DOCTOR_NAME} эмч энэ цагт өөр үзлэгтэй байна.
+              {selectedDoctor?.name} эмч энэ цагт өөр үзлэгтэй байна.
             </div>
           )}
           {errorMsg && (

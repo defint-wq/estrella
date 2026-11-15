@@ -3,6 +3,12 @@ import mongoose from "mongoose";
 // 👇 Шинэ моделиудыг импортлохдоо .js өргөтгөл нэмэв:
 import { IPatientModel, loadPatientClass } from "./src/database/models/Patients.js";
 import { IAppointmentModel, loadAppointmentClass } from "./src/database/models/Appointments.js";
+import {
+  IEmployeeModel,
+  loadEmployeeModel,
+} from "./src/database/models/Employees.js";
+import { loadAuthSessionModel } from "./src/database/models/AuthSessions.js";
+import type { IAuthUser } from "./@types/Employee.js";
 
 const uri = process.env.MONGO_URL;
 
@@ -14,22 +20,27 @@ const mongooseConnectionOptions = {
 export interface IModels {
   Patients: IPatientModel;
   Appointments: IAppointmentModel;
+  Employees: IEmployeeModel;
+  AuthSessions: ReturnType<typeof loadAuthSessionModel>;
 }
 
 export interface IContext {
   models: IModels;
+  authUser?: IAuthUser;
 }
 
 let models: IModels | null = null;
 
-export const getContext = (): IContext => {
-  return { models: getModels() };
+export const getContext = (authUser?: IAuthUser): IContext => {
+  return { models: getModels(), authUser };
 };
 
 export const initModels = () => {
   const models = {} as IModels;
   models.Patients = loadPatientClass(models);
   models.Appointments = loadAppointmentClass(models);
+  models.Employees = loadEmployeeModel();
+  models.AuthSessions = loadAuthSessionModel();
   return models;
 };
 

@@ -1,37 +1,54 @@
 export const parseRegisterNumber = (register: string) => {
-  if (!register || register.length !== 10) return null;
+  const normalized = register.trim().toUpperCase();
+  const match = normalized.match(/^\p{Script=Cyrillic}{2}(\d{8})$/u);
+  if (!match) return null;
 
-  // Жишээ нь: ФМ95112512 -> зөвхөн тоон хэсгийг салгаж авна (95112512)
-  const digits = register.substring(2);
-  if (!/^\d+$/.test(digits)) return null; // Хэрэв тоо биш бол буцна
+  const digits = match[1];
+  const yearShort = Number(digits.slice(0, 2));
+  const encodedMonth = Number(digits.slice(2, 4));
+  const month = encodedMonth > 20 ? encodedMonth - 20 : encodedMonth;
+  if (month < 1 || month > 12) return null;
 
-  let yearShort = parseInt(digits.substring(0, 2)); // 95
-  let month = parseInt(digits.substring(2, 4));     // 11
-  const day = parseInt(digits.substring(4, 6));       // 25
-  const genderDigit = parseInt(digits.substring(6, 7)); // 1 (Сүүлийн 2 орны эхнийх)
-
-  let birthYear = 1900 + yearShort;
-
-  // 2000 оноос хойш төрсөн хүмүүсийн сар дээр 20-ийг нэмсэн байдаг
-  if (month > 20) {
-    month = month - 20;
-    birthYear = 2000 + yearShort;
-  }
-
-  // Одоогийн он сар өдрийг авах
+  const day = Number(digits.slice(4, 6));
+  const genderDigit = Number(digits[6]);
   const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth() + 1;
-  const currentDay = today.getDate();
-
-  // Насыг нарийн тооцоолох (Төрсөн өдөр нь өнгөрсөн эсэхийг шалгана)
-  let age = currentYear - birthYear;
-  if (currentMonth < month || (currentMonth === month && currentDay < day)) {
-    age--; // Хэрэв энэ жилийн төрсөн өдөр нь хараахан болоогүй бол насыг 1-ээр хасна
+  const birthYear =
+    encodedMonth > 20
+      ? 2000 + yearShort
+      : yearShort <= today.getFullYear() % 100
+        ? 2000 + yearShort
+        : 1900 + yearShort;
+  const birthDate = new Date(birthYear, month - 1, day);
+  if (
+    birthDate.getFullYear() !== birthYear ||
+    birthDate.getMonth() !== month - 1 ||
+    birthDate.getDate() !== day ||
+    birthDate > today
+  ) {
+    return null;
   }
 
-  // Хүйсийг тодорхойлох: Сүүлийн 2 орны эхний тоо ТЭГШ бол ЭМЭГТЭЙ, СОНДГОЙ бол ЭРЭГТЭЙ
+  let age = today.getFullYear() - birthYear;
+  if (
+    today.getMonth() + 1 < month ||
+    (today.getMonth() + 1 === month && today.getDate() < day)
+  ) {
+    age--;
+  }
+
   const sex = genderDigit % 2 === 0 ? "FEMALE" : "MALE";
 
   return { age, sex, birthYear, month, day };
+};
+
+export const parseEmployeeRegisterNumber = (register: string) => {
+  const parsed = parseRegisterNumber(register);
+  if (!parsed) return null;
+
+  const genderDigit = Number(register.trim().slice(-1));
+  return {
+    age: parsed.age,
+    gender: genderDigit % 2 === 0 ? "FEMALE" : "MALE",
+    registerNumber: register.trim().toUpperCase(),
+  } as const;
 };

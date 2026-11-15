@@ -12,8 +12,15 @@ export const types = () => `
         CANCELLED
     }
 
+    enum EmployeeRole {
+        ADMIN
+        RECEPTION
+        DOCTOR
+    }
+
     type Appointment {
         _id: ID!
+        doctorId: ID
         startTime: DateTime!
         endTime: DateTime!
         doctorName: String!  
@@ -49,6 +56,7 @@ export const types = () => `
 
     type AppointmentSearchResult {
         _id: ID!
+        doctorId: ID
         startTime: DateTime!
         endTime: DateTime!
         doctorName: String!
@@ -66,6 +74,19 @@ export const types = () => `
         pageInfo: PageInfo
         totalCount: Int
     }
+
+    type Employee {
+        _id: ID!
+        name: String!
+        firstName: String!
+        lastName: String!
+        age: Int!
+        gender: SexStatus!
+        phone: String!
+        registerNumber: String!
+        username: String!
+        role: EmployeeRole!
+    }
 `;
 
 const patientParams = `
@@ -78,16 +99,34 @@ const patientParams = `
 
 const appointmentParams = `
     patientId: ID!
+    doctorId: ID!
     startTime: DateTime!  
     endTime: DateTime!
-    doctorName: String!
-    status: String
     diagnosis: String
+`;
+
+const employeeCreateParams = `
+    firstName: String!
+    lastName: String!
+    phone: String!
+    registerNumber: String!
+    username: String!
+    password: String!
+    role: EmployeeRole!
+`;
+
+const profileUpdateParams = `
+    firstName: String
+    lastName: String
+    phone: String
+    password: String
 `;
 
 export const queries = `
     patients(page: Int, perPage: Int, search: String): PatientsListResponse!
     appointments(page: Int, perPage: Int, search: String, status: AppointmentStatus): AppointmentListResponse!
+    employees(role: EmployeeRole): [Employee!]!
+    me: Employee!
 `;
 
 export const mutations = `
@@ -107,4 +146,9 @@ export const mutations = `
         treatment: String
     ): Appointment
     appointmentCancel(appointmentId: ID!): Appointment
+
+    createEmployee(${employeeCreateParams}): Employee
+    employeeAdd(${employeeCreateParams}): Employee
+    updateMyProfile(${profileUpdateParams}): Employee!
+    employeeProfileUpdate(${profileUpdateParams}): Employee!
 `;

@@ -19,6 +19,7 @@ export const GET_PATIENTS: TypedDocumentNode<
         sex                  
         appointments {
           _id
+          doctorId
           startTime
           endTime            
           doctorName

@@ -1,8 +1,22 @@
 import { GraphQLError } from 'graphql';
 import { IContext } from '../../../connectionResolver.js'; // 👈 .js өргөтгөл нэмэв
+import { requireRoles } from "../../auth/session.js";
+
+interface PatientAddArgs {
+  registrationNumber: string;
+  firstName: string;
+  lastName: string;
+  age: number;
+  sex?: "MALE" | "FEMALE";
+}
 
 export const patientMutations = {
-  patientAdd: async (_parent: any, args: any, context: IContext) => {
+  patientAdd: async (
+    _parent: unknown,
+    args: PatientAddArgs,
+    context: IContext,
+  ) => {
+    requireRoles(context.authUser, "ADMIN", "RECEPTION");
     const { registrationNumber, firstName, lastName, age, sex } = args;
 
     if (age <= 0 || age > 130) {

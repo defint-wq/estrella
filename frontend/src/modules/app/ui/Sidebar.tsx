@@ -1,4 +1,4 @@
-import { LogOut, LogIn, Hospital, ShieldCheck } from "lucide-react";
+import { LogOut, LogIn, ShieldCheck } from "lucide-react";
 import { SidebarItem } from "./SidebarItem";
 
 type MenuItem = {
@@ -8,7 +8,7 @@ type MenuItem = {
 };
 
 type SidebarProps = {
-  user?: { username: string } | null;
+  user?: { username: string; role: string } | null;
   onLogout: () => void;
   navigate: (path: string) => void;
   menuItems: MenuItem[];
@@ -81,7 +81,7 @@ export const Sidebar = ({
                 <p className="truncate text-[12px] font-semibold text-[#45413b]">
                   {user.username}
                 </p>
-                <p className="text-[10px] text-[#9a948a]">Нэвтэрсэн</p>
+                <p className="text-[10px] text-[#9a948a]">{user.role}</p>
               </div>
               <button
                 onClick={onLogout}
@@ -93,7 +93,7 @@ export const Sidebar = ({
             </div>
           ) : (
             <button
-              onClick={() => navigate("/auth/login")}
+              onClick={() => navigate("/login")}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25"
             >
               <LogIn size={15} /> Нэвтрэх

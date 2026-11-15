@@ -4,8 +4,10 @@ import { PageContainer, PageContent } from "../modules/app/ui/page";
 import PatientHeader from "../modules/patient/components/PatientHeader";
 import { PatientList } from "../modules/patient/components/PatientList";
 import { PatientAddModal } from "../modules/patient/components/PatientModal";
+import { useAuth } from "../modules/auth/AuthContext";
 
 export const PatientPage = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -22,7 +24,7 @@ export const PatientPage = () => {
       <PageContent className="pt-0 sm:pt-0 lg:pt-0">
         <div className="sticky top-0 z-30 -mx-5 bg-[#f7f6f3]/95 px-5 pb-4 pt-6 backdrop-blur-md sm:-mx-8 sm:px-8 sm:pt-8 lg:-mx-10 lg:px-10 lg:pt-6">
           <PatientHeader
-            action={
+            action={user?.role !== "DOCTOR" ? (
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(true)}
@@ -31,7 +33,7 @@ export const PatientPage = () => {
                 <UserPlus size={15} />
                 Үйлчлүүлэгч нэмэх
               </button>
-            }
+            ) : undefined}
           />
           <label className="mt-5 flex h-12 items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-white px-4 text-[#9c968d] transition focus-within:border-[#ad9272] focus-within:ring-4 focus-within:ring-[#ad9272]/10 sm:mt-4">
             <Search size={16} className="shrink-0" />
@@ -59,7 +61,7 @@ export const PatientPage = () => {
 
         <PatientList searchQuery={searchQuery} />
 
-        {isAddModalOpen && (
+        {isAddModalOpen && user?.role !== "DOCTOR" && (
           <PatientAddModal
             onClose={() => setIsAddModalOpen(false)}
             onSuccess={handlePatientAdded}

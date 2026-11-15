@@ -4,6 +4,7 @@ import { useMutation } from "@apollo/client/react";
 import { FileText, Printer, X } from "lucide-react";
 import type { Appointment } from "../modules/patient/types/patient";
 import { APPOINTMENT_COMPLETE } from "../modules/patient/graphql/mutation/appointmentComplete";
+import { useAuth } from "../modules/auth/AuthContext";
 
 interface ConsultationFormProps {
   appointment: Appointment;
@@ -32,13 +33,17 @@ export const ConsultationForm = ({
   onClose,
   onSaved,
 }: ConsultationFormProps) => {
+  const { user } = useAuth();
   const [examinationNotes, setExaminationNotes] = useState(appointment.examinationNotes ?? "");
   const [symptoms, setSymptoms] = useState(appointment.symptoms ?? "");
   const [treatment, setTreatment] = useState(appointment.treatment ?? "");
   const [diagnosis, setDiagnosis] = useState(appointment.diagnosis ?? "");
   const [saved, setSaved] = useState(appointment.status === "COMPLETED");
   const [error, setError] = useState("");
-  const isReadOnly = appointment.status === "CANCELLED";
+  const canEdit =
+    user?.role === "ADMIN" ||
+    (user?.role === "DOCTOR" && appointment.doctorId === user._id);
+  const isReadOnly = appointment.status === "CANCELLED" || !canEdit;
 
   const [saveConsultation, { loading }] = useMutation(APPOINTMENT_COMPLETE, {
     refetchQueries: ["GetPatients"],
