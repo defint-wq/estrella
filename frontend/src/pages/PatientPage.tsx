@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Check, Search, UserPlus } from "lucide-react";
-import { PageContainer, PageContent } from "../modules/app/ui/page";
+import {
+  PageContainer,
+  PageContent,
+  primaryButtonClass,
+} from "../modules/app/ui/page";
 import PatientHeader from "../modules/patient/components/PatientHeader";
 import { PatientList } from "../modules/patient/components/PatientList";
 import { PatientAddModal } from "../modules/patient/components/PatientModal";
@@ -8,6 +12,8 @@ import { useAuth } from "../modules/auth/AuthContext";
 
 export const PatientPage = () => {
   const { user } = useAuth();
+  const canManagePatients =
+    user?.role === "ADMIN" || user?.role === "RECEPTION";
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -21,21 +27,21 @@ export const PatientPage = () => {
 
   return (
     <PageContainer>
-      <PageContent className="pt-0 sm:pt-0 lg:pt-0">
-        <div className="sticky top-0 z-30 -mx-5 bg-[#f7f6f3]/95 px-5 pb-4 pt-6 backdrop-blur-md sm:-mx-8 sm:px-8 sm:pt-8 lg:-mx-10 lg:px-10 lg:pt-6">
+      <PageContent>
+      <div className="sticky top-0 z-30 bg-[#FAF8F5]/95 pb-4 pt-2 backdrop-blur-md">
           <PatientHeader
-            action={user?.role !== "DOCTOR" ? (
+            action={canManagePatients ? (
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-stone-700 px-4 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 active:scale-95 sm:w-auto sm:px-5"
+              className={`${primaryButtonClass} h-11 w-full whitespace-nowrap sm:w-auto`}
               >
                 <UserPlus size={15} />
                 Үйлчлүүлэгч нэмэх
               </button>
             ) : undefined}
           />
-          <label className="mt-5 flex h-12 items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-white px-4 text-[#9c968d] transition focus-within:border-[#ad9272] focus-within:ring-4 focus-within:ring-[#ad9272]/10 sm:mt-4">
+          <label className="mt-4 flex h-11 items-center gap-2.5 rounded-xl border border-stone-200 bg-[#FAF8F5] px-4 text-stone-500 transition focus-within:ring-2 focus-within:ring-stone-900">
             <Search size={16} className="shrink-0" />
             <input
               type="text"
@@ -45,7 +51,7 @@ export const PatientPage = () => {
               onChange={(e) => {
                 setSearchQuery(e.target.value);
               }}
-              className="w-full bg-transparent text-[13px] text-[#37342f] outline-none placeholder:text-[#b7b1a9]"
+              className="w-full min-w-0 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0"
             />
           </label>
         </div>
@@ -61,7 +67,7 @@ export const PatientPage = () => {
 
         <PatientList searchQuery={searchQuery} />
 
-        {isAddModalOpen && user?.role !== "DOCTOR" && (
+        {isAddModalOpen && canManagePatients && (
           <PatientAddModal
             onClose={() => setIsAddModalOpen(false)}
             onSuccess={handlePatientAdded}

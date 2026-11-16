@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useMutation } from "@apollo/client/react";
 import { Check, FileText } from "lucide-react";
 import { APPOINTMENT_COMPLETE } from "../graphql/mutation/appointmentComplete";
+import {
+  pageTextAreaClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from "../../app/ui/page";
 
 interface AppointmentDiagnosisFormProps {
   appointmentId: string;
@@ -54,7 +59,7 @@ export const AppointmentDiagnosisForm = ({
           if (error) setError("");
         }}
         placeholder="Үйлчлүүлэгчийн онош, зөвлөгөөг энд бичнэ үү..."
-        className="min-h-24 w-full resize-y rounded-xl border border-[#e8e3db] bg-white px-3.5 py-3 text-[12px] leading-relaxed text-[#37342f] outline-none transition placeholder:text-[#b7b1a9] focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10"
+        className={`${pageTextAreaClass} min-h-24`}
       />
 
       {error && (
@@ -68,7 +73,7 @@ export const AppointmentDiagnosisForm = ({
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="rounded-xl border border-[#e9e4dc] bg-white px-3.5 py-2 text-[11px] font-medium text-[#777168] transition hover:bg-[#f8f6f2] disabled:opacity-60"
+          className={`${secondaryButtonClass} px-3.5 py-2 text-xs`}
         >
           Цуцлах
         </button>
@@ -76,7 +81,7 @@ export const AppointmentDiagnosisForm = ({
           type="button"
           disabled={loading || !diagnosisText.trim()}
           onClick={handleSave}
-          className="inline-flex items-center gap-1.5 rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:bg-[#d9d5cc] disabled:text-[#9a948a] disabled:shadow-none"
+          className={primaryButtonClass}
         >
           <Check size={14} />
           {loading ? "Хадгалж байна..." : "Үзлэг дуусгах"}

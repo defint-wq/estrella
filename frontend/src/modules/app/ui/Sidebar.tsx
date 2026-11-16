@@ -43,7 +43,7 @@ export const Sidebar = ({
 
           <div>
             <h1 className="text-[16px] font-semibold tracking-[-0.03em] text-[#34362f]">
-              Dr.<span className="font-normal text-[#9a8a72]">Munkh</span>
+              Bodhi<span className="font-normal text-[#9a8a72]">Med</span>
             </h1>
             <p className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.19em] text-[#9e978d]">
               Health & Wellness

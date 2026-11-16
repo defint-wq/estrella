@@ -8,6 +8,7 @@ export const employeeSchema = new Schema(
     lastName: { type: String, trim: true, default: "" },
     age: { type: Number, required: true },
     gender: { type: String, enum: ["MALE", "FEMALE"], required: true },
+    avatar: { type: String, trim: true },
     phone: { type: String, required: true, trim: true },
     registerNumber: { type: String, required: true, unique: true, trim: true },
     username: {

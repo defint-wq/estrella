@@ -6,6 +6,12 @@ import {
 import { APPOINTMENT_ADD } from "../graphql/mutation/appointmentAdd";
 import { GET_PATIENTS } from "../graphql/query/patient";
 import { GET_DOCTORS } from "../graphql/query/doctors";
+import {
+  pageCardClass,
+  pageInputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from "../../app/ui/page";
 
 interface AppointmentModalProps {
   patientId: string;
@@ -140,7 +146,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
         aria-modal="true"
         aria-label="Эмчид цаг товлох"
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[28px] border border-[#e9e5de] bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_20px_60px_rgba(60,52,41,0.2)] sm:rounded-[24px]"
+        className={`${pageCardClass} max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[28px] p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:rounded-[24px]`}
       >
         {/* Гарчиг */}
         <div className="mb-5 flex items-center justify-between border-b border-[#f0ede8] pb-4">
@@ -149,7 +155,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
               <CalendarDays size={17} />
             </div>
             <div>
-              <h3 className="text-[14px] font-semibold tracking-[-0.02em] text-[#34362f]">
+              <h3 className="text-xl font-bold text-stone-900">
                 Эмчид цаг товлох
               </h3>
               <p className="mt-0.5 text-[10px] text-[#9b968d]">Үзлэг тус бүр {SLOT_MINUTES} минут</p>
@@ -179,7 +185,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
                   setDoctorId(event.target.value);
                   setSelectedTime("");
                 }}
-                className="h-11 w-full rounded-xl border border-[#e8e3db] bg-white px-3.5 text-[13px] text-[#49463f]"
+                className={pageInputClass}
               >
                 <option value="">Эмч сонгоно уу</option>
                 {doctors.map((doctor) => (
@@ -203,7 +209,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
                 setSelectedTime("");
                 setErrorMsg("");
               }}
-              className="h-11 w-full rounded-xl border border-[#e8e3db] bg-white px-3.5 text-[13px] font-medium text-[#37342f] outline-none transition focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10"
+              className={pageInputClass}
             />
           </div>
 
@@ -214,7 +220,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
               type="button"
               onClick={() => setShowTimeSlots((v) => !v)}
               aria-expanded={showTimeSlots}
-              className="flex w-full items-center justify-between rounded-xl border border-[#e8e3db] bg-[#fbfaf8] px-3.5 py-3 text-[12px] font-medium text-[#615c55] transition hover:bg-[#f7f6f3]"
+              className="flex w-full items-center justify-between rounded-xl border border-stone-200 bg-[#FAF8F5] px-4 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
             >
               <span className="flex items-center gap-2">
                 <Clock size={15} className="text-[#a48663]" />
@@ -224,7 +230,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
             </button>
 
             {showTimeSlots && (
-              <div className="mt-2 grid max-h-52 grid-cols-4 gap-2 overflow-y-auto rounded-xl border border-[#ece8e1] bg-[#fbfaf8] p-3">
+              <div className="mt-2 grid max-h-52 grid-cols-4 gap-2 overflow-y-auto rounded-xl border border-stone-200 bg-stone-50 p-3">
                 {slots.map((slot) => (
                   <button
                     key={slot.time}
@@ -239,8 +245,8 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
                       slot.isBusy
                         ? "cursor-not-allowed bg-[#f1eee9] text-[#bdb7ae] line-through"
                         : slot.time === selectedTime
-                        ? "bg-stone-700 text-white shadow-sm"
-                        : "border border-[#e8e3db] bg-white text-[#5f594f] hover:border-[#ad9272] hover:text-[#34362f]"
+                        ? "bg-stone-900 text-white shadow-sm"
+                        : "border border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
                     }`}
                   >
                     {slot.time}
@@ -255,8 +261,8 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
             <div>
               <span className={labelClass}>Үзлэг эхлэх</span>
               <div
-                className={`flex items-center gap-2 rounded-xl border px-3.5 py-3 text-[13px] font-semibold text-[#37342f] ${
-                  isCurrentTimeSlotBusy ? "border-rose-300 bg-rose-50/50" : "border-[#e8e3db] bg-white"
+                className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold text-stone-900 ${
+                  isCurrentTimeSlotBusy ? "border-rose-300 bg-rose-50/50" : "border-stone-200 bg-[#FAF8F5]"
                 }`}
               >
                 <Clock size={14} className="text-[#a8a197]" />
@@ -265,7 +271,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
             </div>
             <div>
               <span className={labelClass}>Үзлэг дуусах</span>
-              <div className="flex items-center gap-2 rounded-xl border border-[#e8e3db] bg-[#f7f6f3] px-3.5 py-3 text-[13px] font-semibold text-[#8b8478]">
+              <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-500">
                 <Clock size={14} className="text-[#a8a197]" />
                 {getEndTimeDisplay()}
               </div>
@@ -289,14 +295,14 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-[#e9e4dc] py-3 text-[12px] font-medium text-[#777168] transition hover:bg-[#f8f6f2]"
+              className={`${secondaryButtonClass} flex-1`}
             >
               Цуцлах
             </button>
             <button
               type="submit"
               disabled={!canSubmit}
-              className="flex-1 rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:bg-[#d9d5cc] disabled:text-[#9a948a] disabled:shadow-none"
+              className={`${primaryButtonClass} flex-1`}
             >
               {loading ? "Бүртгэж байна..." : "Цаг товлох"}
             </button>

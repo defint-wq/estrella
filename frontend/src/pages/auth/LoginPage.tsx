@@ -2,6 +2,11 @@ import { useState, type FormEvent } from "react";
 import { KeyRound, Stethoscope } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../modules/auth/AuthContext";
+import {
+  pageCardClass,
+  pageInputClass,
+  primaryButtonClass,
+} from "../../modules/app/ui/page";
 
 export const LoginPage = () => {
   const { user, loading, authError, login } = useAuth();
@@ -43,7 +48,7 @@ export const LoginPage = () => {
 
   return (
     <main className="flex min-h-screen items-center justify-center overflow-y-auto bg-[#FAF8F5] px-5 py-10 text-stone-900">
-      <section className="w-full max-w-md rounded-3xl border border-stone-200/80 bg-white p-7 shadow-[0_12px_40px_rgba(70,58,43,0.07)] sm:p-9">
+      <section className={`${pageCardClass} w-full max-w-md p-6 sm:p-8`}>
         <div className="flex items-center gap-3">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-stone-100 text-stone-700">
             <Stethoscope size={22} strokeWidth={1.8} />
@@ -57,7 +62,7 @@ export const LoginPage = () => {
             </p>
           </div>
         </div>
-        <h1 className="mt-7 text-2xl font-semibold tracking-tight text-stone-900">
+        <h1 className="mt-7 text-2xl font-bold text-stone-900">
           Нэвтрэх
         </h1>
         <p className="mt-2 text-sm leading-6 text-stone-500">
@@ -72,7 +77,7 @@ export const LoginPage = () => {
             <button
               type="button"
               onClick={() => navigate("/home", { replace: true })}
-              className="mt-4 w-full rounded-2xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-700 focus:outline-none focus:ring-4 focus:ring-stone-500/25"
+              className={`${primaryButtonClass} mt-4 w-full`}
             >
               Профайл руу үргэлжлүүлэх
             </button>
@@ -86,7 +91,7 @@ export const LoginPage = () => {
               <input
                 autoComplete="username"
                 autoFocus
-                className="h-12 w-full rounded-2xl border border-stone-200 bg-[#FAF8F5] px-4 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-900/5"
+                className={pageInputClass}
                 onChange={(event) => {
                   setUsername(event.target.value);
                   setError(null);
@@ -103,7 +108,7 @@ export const LoginPage = () => {
               </span>
               <input
                 autoComplete="current-password"
-                className="h-12 w-full rounded-2xl border border-stone-200 bg-[#FAF8F5] px-4 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-900/5"
+                className={pageInputClass}
                 onChange={(event) => {
                   setPassword(event.target.value);
                   setError(null);
@@ -124,7 +129,7 @@ export const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-stone-900 px-5 py-3 text-sm font-semibold tracking-wide text-white shadow-sm transition hover:bg-stone-700 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+              className={`${primaryButtonClass} w-full`}
             >
               <KeyRound size={17} />
               Нэвтрэх

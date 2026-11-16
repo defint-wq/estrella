@@ -10,19 +10,19 @@ type PatientHeaderProps = {
 
 export const PatientHeader = ({ count, action }: PatientHeaderProps) => {
   return (
-    <div className="mb-4 flex flex-col justify-between gap-5 sm:flex-row sm:items-end sm:gap-4">
+    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div className="flex items-start gap-3.5">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-[#353a33] text-[#eee8dc] shadow-sm">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-stone-700">
           <Users size={20} strokeWidth={1.6} />
         </div>
 
         <div>
-          <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl font-bold leading-tight tracking-[-0.04em] text-[#36342f] sm:text-2xl">
+          <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-2xl font-bold text-stone-900">
             <span>
               Үйлчлүүлэгчдийн <span className="text-[#a48663]">жагсаалт</span>
             </span>
             {typeof count === "number" && (
-              <span className="rounded-md bg-[#f4f1ec] px-2 py-0.5 text-xs font-medium tracking-normal text-[#8b8173]">
+              <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold tracking-normal text-stone-600">
                 {count}
               </span>
             )}

@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@apollo/client/react";
+import { useMutation, useQuery } from "@apollo/client/react";
 import {
-  Check, ChevronDown, ChevronUp, History, Plus, Search, User, UserRound,
+  Check, ChevronDown, ChevronUp, History, Pencil, Plus, Search, Trash2, User, UserRound,
 } from "lucide-react";
 import { GET_PATIENTS } from "../graphql/query/patient";
+import { PATIENT_REMOVE } from "../graphql/mutation/patientRemove";
 import { AppointmentList } from "./AppointmentList";
 import { AppointmentModal } from "./AppointentModal";
+import {
+  PatientEditModal,
+  type PatientEditRecord,
+} from "./PatientEditModal";
 import { useDebouncedValue } from "../../app/hooks/useDebouncedValue";
 import { InfiniteScrollTrigger } from "../../../components/InfiniteScrollTrigger";
 import type { PatientsQuery } from "../types/patient";
 import { useAuth } from "../../auth/AuthContext";
+import {
+  dangerButtonClass,
+  pageCardClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from "../../app/ui/page";
 
 interface PatientAppointment {
   _id: string;
@@ -41,6 +52,8 @@ const PATIENTS_PER_PAGE = 10;
 
 export const PatientList = ({ searchQuery }: PatientListProps) => {
   const { user } = useAuth();
+  const canManagePatients =
+    user?.role === "ADMIN" || user?.role === "RECEPTION";
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
   const {
     data,
@@ -63,6 +76,13 @@ export const PatientList = ({ searchQuery }: PatientListProps) => {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [activeHistoryPatientId, setActiveHistoryPatientId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [editingPatient, setEditingPatient] =
+    useState<PatientEditRecord | null>(null);
+  const [deletingPatientId, setDeletingPatientId] = useState<string | null>(
+    null,
+  );
+  const [removePatient] = useMutation(PATIENT_REMOVE);
 
   const patients: Patient[] = data?.patients?.list || [];
   const pageInfo = data?.patients.pageInfo;
@@ -129,11 +149,45 @@ export const PatientList = ({ searchQuery }: PatientListProps) => {
   const toggleHistory = (id: string) =>
     setActiveHistoryPatientId((current) => (current === id ? null : id));
 
+  const handleRemovePatient = async (patient: Patient) => {
+    const patientName =
+      `${patient.lastName ?? ""} ${patient.firstName ?? ""}`.trim();
+    if (
+      !window.confirm(
+        `${patientName || "Энэ үйлчлүүлэгч"}-г устгавал түүнтэй холбоотой бүх цагийн бүртгэл мөн устна. Үргэлжлүүлэх үү?`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingPatientId(patient._id);
+    setActionError("");
+    try {
+      await removePatient({ variables: { ids: [patient._id] } });
+      setNotice("Үйлчлүүлэгч болон холбогдох цагийн бүртгэлүүд устгагдлаа.");
+      void refetch().catch((cause: unknown) => {
+        setActionError(
+          cause instanceof Error
+            ? `Устгасан боловч жагсаалтыг шинэчилж чадсангүй: ${cause.message}`
+            : "Устгасан боловч жагсаалтыг шинэчилж чадсангүй.",
+        );
+      });
+    } catch (cause) {
+      setActionError(
+        cause instanceof Error
+          ? cause.message
+          : "Үйлчлүүлэгчийг устгаж чадсангүй.",
+      );
+    } finally {
+      setDeletingPatientId(null);
+    }
+  };
+
   if (initialLoading) {
     return (
       <div className="grid gap-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-[92px] animate-pulse rounded-[20px] border border-[#ece8e1] bg-white" />
+          <div key={i} className="h-[92px] animate-pulse rounded-2xl border border-stone-200 bg-white" />
         ))}
         <p className="pt-1 text-center text-[11px] text-[#9b968d]">
           Уншиж байна... Сервер унтсан байвал асахад 30–60 секунд хүлээнэ үү.
@@ -157,9 +211,14 @@ export const PatientList = ({ searchQuery }: PatientListProps) => {
           <Check size={15} /> {notice}
         </div>
       )}
+      {actionError && (
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">
+          {actionError}
+        </div>
+      )}
 
       {patients.length === 0 && (
-        <div className="flex flex-col items-center gap-2 rounded-[20px] border border-dashed border-[#e4dfd6] bg-[#fbfaf8] py-12 text-center">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-stone-200 bg-stone-50 py-12 text-center">
           <Search size={20} className="text-[#b5ab98]" />
           <p className="text-[12px] text-[#9b968d]">
             {searchQuery.trim()
@@ -178,7 +237,7 @@ export const PatientList = ({ searchQuery }: PatientListProps) => {
         return (
           <div
             key={patient._id}
-            className="rounded-[20px] border border-[#e9e5de] bg-white p-5 shadow-[0_4px_22px_rgba(60,52,41,0.035)] transition hover:border-[#ddd6c9] sm:p-6"
+            className={`${pageCardClass} p-5 transition hover:border-stone-300 sm:p-6`}
           >
             <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
               {/* Avatar */}
@@ -231,10 +290,10 @@ export const PatientList = ({ searchQuery }: PatientListProps) => {
                   type="button"
                   onClick={() => toggleHistory(patient._id)}
                   aria-expanded={isOpen}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-[11px] font-medium transition md:flex-none ${
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-xs font-semibold transition md:flex-none ${
                     isOpen
                       ? "border-[#e3d6bd] bg-[#fbf7f0] text-[#7d6540]"
-                      : "border-[#e9e4dc] bg-white text-[#777168] hover:bg-[#f8f6f2]"
+                      : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
                   }`}
                 >
                   <History size={14} />
@@ -246,11 +305,34 @@ export const PatientList = ({ searchQuery }: PatientListProps) => {
                   <button
                     type="button"
                     onClick={() => setSelectedPatientId(patient._id)}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-stone-700 px-4 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 active:scale-95 md:flex-none"
+                    className={`${primaryButtonClass} flex-1 md:flex-none`}
                   >
                     <Plus size={14} />
                     <span>Цаг өгөх</span>
                   </button>
+                )}
+                {canManagePatients && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setEditingPatient(patient)}
+                      aria-label={`${patientName(patient)} мэдээлэл засах`}
+                      title="Засах"
+                      className={`${secondaryButtonClass} size-10 p-0`}
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleRemovePatient(patient)}
+                      disabled={deletingPatientId !== null}
+                      aria-label={`${patientName(patient)} устгах`}
+                      title="Устгах"
+                      className={`${dangerButtonClass} size-10 p-0`}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -285,6 +367,28 @@ export const PatientList = ({ searchQuery }: PatientListProps) => {
           }}
         />
       )}
+      {editingPatient && canManagePatients && (
+        <PatientEditModal
+          patient={editingPatient}
+          onClose={() => setEditingPatient(null)}
+          onSuccess={() => {
+            setEditingPatient(null);
+            setActionError("");
+            setNotice("Үйлчлүүлэгчийн мэдээлэл шинэчлэгдлээ.");
+            void refetch().catch((cause: unknown) => {
+              setActionError(
+                cause instanceof Error
+                  ? `Мэдээлэл хадгалагдсан боловч жагсаалтыг шинэчилж чадсангүй: ${cause.message}`
+                  : "Мэдээлэл хадгалагдсан боловч жагсаалтыг шинэчилж чадсангүй.",
+              );
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
+
+const patientName = (patient: Patient) =>
+  `${patient.lastName ?? ""} ${patient.firstName ?? ""}`.trim() ||
+  "Үйлчлүүлэгч";

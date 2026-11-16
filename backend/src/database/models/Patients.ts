@@ -59,7 +59,7 @@ export const loadPatientClass = (model: IModels) => {
       return await model.Patients.findByIdAndUpdate(
         _id,
         { $set: doc },
-        { returnDocument: "after" },
+        { new: true, runValidators: true },
       );
     }
 

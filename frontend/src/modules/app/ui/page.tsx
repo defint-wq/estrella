@@ -1,6 +1,24 @@
 import React from "react";
 import { cn } from "./utils";
 
+export const pageCardClass =
+  "rounded-3xl border border-stone-200 bg-white shadow-sm";
+
+export const pageInputClass =
+  "h-11 w-full rounded-xl border border-stone-200 bg-[#FAF8F5] px-4 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-900 disabled:cursor-not-allowed disabled:opacity-60";
+
+export const pageTextAreaClass =
+  "w-full resize-y rounded-xl border border-stone-200 bg-[#FAF8F5] px-4 py-3 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-900 disabled:cursor-not-allowed disabled:opacity-60";
+
+export const primaryButtonClass =
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-900 disabled:cursor-not-allowed disabled:opacity-60";
+
+export const secondaryButtonClass =
+  "inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-700 transition-all hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-stone-900 disabled:cursor-not-allowed disabled:opacity-60";
+
+export const dangerButtonClass =
+  "inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition-all hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-700 disabled:cursor-not-allowed disabled:opacity-60";
+
 export const PageContainer = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -9,7 +27,7 @@ export const PageContainer = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "flex h-full flex-col overflow-hidden bg-[#f7f6f3] text-[#302f2b]",
+        "flex h-full flex-col overflow-hidden bg-[#FAF8F5] text-stone-900",
         className,
       )}
       {...props}
@@ -28,7 +46,7 @@ export const PageSubHeader = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "flex h-auto flex-none flex-wrap items-center gap-3 border-b border-[#ece9e3] bg-[#f7f6f3]/90 px-5 py-3 backdrop-blur-md sm:px-8 lg:px-10",
+        "flex h-auto flex-none flex-wrap items-center gap-3 border-b border-stone-200 bg-[#FAF8F5]/90 px-6 py-3 backdrop-blur-md lg:px-8",
         className,
       )}
       {...props}
@@ -46,7 +64,7 @@ export const PageContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-5 pb-32 pt-6 sm:px-8 sm:pt-8 lg:px-10 lg:pb-10 lg:pt-6",
+        "mx-auto min-h-0 w-full max-w-6xl min-w-0 flex-1 space-y-6 overflow-y-auto p-6 pb-32 lg:p-8",
         className,
       )}
       {...props}
@@ -59,18 +77,24 @@ PageContent.displayName = "PageContent";
 export const PageTitle = ({
   title,
   description,
+  action,
   className,
 }: {
   title: string;
   description?: string;
+  action?: React.ReactNode;
   className?: string;
 }) => (
-  <div className={cn("mb-6", className)}>
-    <h1 className="text-[24px] font-medium tracking-[-0.04em] text-[#36342f] sm:text-[28px]">
-      {title}
-    </h1>
-    {description && (
-      <p className="mt-1.5 text-[12px] text-[#89847b]">{description}</p>
+  <div
+    className={cn(
+      "flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between",
+      className,
     )}
+  >
+    <div>
+      <h1 className="text-2xl font-bold text-stone-900">{title}</h1>
+      {description && <p className="mt-1 text-sm text-stone-500">{description}</p>}
+    </div>
+    {action && <div className="shrink-0">{action}</div>}
   </div>
 );

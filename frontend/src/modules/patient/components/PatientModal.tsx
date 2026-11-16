@@ -4,6 +4,12 @@ import { AlertTriangle, UserPlus, X } from "lucide-react";
 import { PATIENT_ADD } from "../graphql/mutation/patientAdd";
 import { GET_PATIENTS } from "../graphql/query/patient";
 import { parseRegisterNumber } from "../../app/ui/registerParser";
+import {
+  pageCardClass,
+  pageInputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from "../../app/ui/page";
 
 interface PatientAddModalProps {
   onClose: () => void;
@@ -13,8 +19,7 @@ interface PatientAddModalProps {
 const labelClass =
   "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9b8a73]";
 
-const inputClass =
-  "h-11 w-full rounded-xl border border-[#e8e3db] bg-white px-3.5 text-[13px] text-[#37342f] outline-none transition placeholder:text-[#b7b1a9] focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10";
+const inputClass = pageInputClass;
 
 export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) => {
   const [firstName, setFirstName] = useState("");
@@ -93,7 +98,7 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
         aria-modal="true"
         aria-label="Шинэ үйлчлүүлэгч бүртгэх"
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[28px] border border-[#e9e5de] bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_20px_60px_rgba(60,52,41,0.2)] sm:rounded-[24px]"
+        className={`${pageCardClass} max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[28px] p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:rounded-[24px]`}
       >
         {/* Гарчиг */}
         <div className="mb-5 flex items-center justify-between border-b border-[#f0ede8] pb-4">
@@ -102,7 +107,7 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
               <UserPlus size={17} />
             </div>
             <div>
-              <h3 className="text-[14px] font-semibold tracking-[-0.02em] text-[#34362f]">
+              <h3 className="text-xl font-bold text-stone-900">
                 Шинэ үйлчлүүлэгч бүртгэх
               </h3>
               <p className="mt-0.5 text-[10px] text-[#9b968d]">
@@ -171,14 +176,14 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <span className={labelClass}>Нас</span>
-              <div className="flex h-11 items-center rounded-xl border border-[#e8e3db] bg-[#f7f6f3] px-3.5 text-[13px] font-semibold text-[#49463f]">
+              <div className="flex h-11 items-center rounded-xl border border-stone-200 bg-stone-50 px-4 text-sm font-semibold text-stone-700">
                 {age > 0 ? age : <span className="font-normal text-[#b7b1a9]">—</span>}
               </div>
             </div>
 
             <div>
               <span className={labelClass}>Хүйс</span>
-              <div className="grid h-11 grid-cols-2 gap-1 rounded-xl border border-[#e8e3db] bg-[#f7f6f3] p-1">
+              <div className="grid h-11 grid-cols-2 gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1">
                 {[
                   { value: "MALE", label: "Эр" },
                   { value: "FEMALE", label: "Эм" },
@@ -191,8 +196,8 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
                       aria-current={selected}
                       className={`flex items-center justify-center rounded-lg text-[12px] font-medium transition ${
                         selected
-                          ? "bg-white text-[#34362f] shadow-[0_1px_6px_rgba(57,50,40,0.1)]"
-                          : "text-[#c4beb4]"
+                          ? "rounded-lg bg-white text-stone-900 shadow-sm"
+                          : "rounded-lg text-stone-400"
                       }`}
                     >
                       {opt.label}
@@ -214,14 +219,14 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-[#e9e4dc] py-3 text-[12px] font-medium text-[#777168] transition hover:bg-[#f8f6f2]"
+              className={`${secondaryButtonClass} flex-1`}
             >
               Цуцлах
             </button>
             <button
               type="submit"
               disabled={!canSubmit}
-              className="flex-1 rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:bg-[#d9d5cc] disabled:text-[#9a948a] disabled:shadow-none"
+              className={`${primaryButtonClass} flex-1`}
             >
               {loading ? "Бүртгэж байна..." : "Бүртгэх"}
             </button>

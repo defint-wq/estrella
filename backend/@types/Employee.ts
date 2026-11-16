@@ -9,6 +9,7 @@ export interface IEmployee {
   lastName?: string;
   age: number;
   gender: EmployeeGender;
+  avatar?: string | null;
   phone: string;
   registerNumber: string;
   username: string;

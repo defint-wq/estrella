@@ -15,8 +15,8 @@ const APPOINTMENTS_PER_PAGE = 10;
 const tabClassName = ({ isActive }: { isActive: boolean }) =>
   `rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
     isActive
-      ? "bg-white text-[#514a40] shadow-sm"
-      : "text-[#89847b] hover:bg-white/70 hover:text-[#514a40]"
+      ? "bg-white text-stone-900 shadow-sm"
+      : "text-stone-500 hover:bg-white/70 hover:text-stone-900"
   }`;
 
 export const HomeLayout = () => {
@@ -119,20 +119,20 @@ export const HomeLayout = () => {
 
   return (
     <PageContainer>
-      <PageContent className="pt-0 sm:pt-0 lg:pt-0">
-        <header className="sticky top-0 z-20 -mx-5 mb-6 bg-[#f7f6f3]/95 px-5 pb-4 pt-6 backdrop-blur-md sm:-mx-8 sm:px-8 sm:pt-8 lg:-mx-10 lg:px-10 lg:pt-6">
+      <PageContent>
+        <header className="sticky top-0 z-20 rounded-b-2xl bg-[#FAF8F5]/95 pb-4 pt-2 backdrop-blur-md">
           <div className="flex items-start gap-3.5">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-[#353a33] text-[#eee8dc] shadow-sm">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-stone-700">
               <CalendarDays size={20} strokeWidth={1.6} />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight tracking-[-0.04em] text-[#36342f] sm:text-2xl">
+              <h1 className="text-2xl font-bold text-stone-900">
                 Үзлэгийн жагсаалт
               </h1>
             </div>
           </div>
 
-          <label className="mt-5 flex h-12 items-center gap-2.5 rounded-xl border border-[#e8e3db] bg-white px-4 text-[#9c968d] transition focus-within:border-[#ad9272] focus-within:ring-4 focus-within:ring-[#ad9272]/10">
+          <label className="mt-4 flex h-11 items-center gap-2.5 rounded-xl border border-stone-200 bg-[#FAF8F5] px-4 text-stone-500 transition focus-within:ring-2 focus-within:ring-stone-900">
             <Search size={16} className="shrink-0" />
             <input
               type="search"
@@ -142,13 +142,13 @@ export const HomeLayout = () => {
               onChange={(event) => {
                 setSearchQuery(event.target.value);
               }}
-              className="w-full bg-transparent text-[13px] text-[#37342f] outline-none placeholder:text-[#b7b1a9]"
+              className="w-full min-w-0 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0"
             />
           </label>
 
           <nav
             aria-label="Үзлэгийн төлөв"
-            className="mt-4 flex w-fit gap-1 rounded-2xl border border-[#ece8e1] bg-[#f1eee8] p-1"
+            className="mt-4 flex w-fit gap-1 rounded-2xl border border-stone-200 bg-stone-100 p-1"
           >
             <NavLink to="pending" className={tabClassName}>
               Үзээгүй

@@ -1,5 +1,6 @@
 import { CalendarDays, Clock, Stethoscope, type LucideIcon } from "lucide-react";
 import type { DashboardAppointment } from "../pages/home/types";
+import { pageCardClass, secondaryButtonClass } from "../modules/app/ui/page";
 
 interface AppointmentCardProps {
   appointment: DashboardAppointment;
@@ -26,7 +27,7 @@ export const AppointmentCard = ({
   actionIcon: ActionIcon,
   onAction,
 }: AppointmentCardProps) => (
-  <article className="rounded-[20px] border border-[#e9e5de] bg-white p-5 shadow-[0_4px_22px_rgba(60,52,41,0.035)] sm:p-6">
+  <article className={`${pageCardClass} p-5 sm:p-6`}>
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-3.5">
         <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f3f0ea] text-[#89785f]">
@@ -58,7 +59,7 @@ export const AppointmentCard = ({
         <button
           type="button"
           onClick={onAction}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#d9cbb5] bg-[#f6f0e6] px-4 py-2.5 text-sm font-semibold text-[#725d3e] transition hover:bg-[#efe6d8]"
+          className={`${secondaryButtonClass} px-4 py-2.5`}
         >
           <ActionIcon size={15} />
           {actionLabel}
@@ -67,7 +68,7 @@ export const AppointmentCard = ({
     </div>
 
     {appointment.diagnosis && (
-      <div className="mt-4 rounded-xl border border-[#ece8e1] bg-[#fbfaf8] px-4 py-3">
+      <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9b8a73]">
           Онош
         </p>

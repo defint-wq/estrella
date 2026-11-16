@@ -1,7 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { gql } from "@apollo/client";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { PageContainer, PageContent, PageTitle } from "../../modules/app/ui/page";
+import {
+  PageContainer,
+  PageContent,
+  PageTitle,
+  pageCardClass,
+  pageInputClass,
+  primaryButtonClass,
+} from "../../modules/app/ui/page";
+import { AvatarInput } from "../../modules/app/ui/AvatarInput";
 
 const ME_PROFILE = gql`
   query MeProfile {
@@ -12,6 +20,7 @@ const ME_PROFILE = gql`
       lastName
       age
       gender
+      avatar
       phone
       registerNumber
       username
@@ -26,12 +35,14 @@ const UPDATE_EMPLOYEE_PROFILE = gql`
     $lastName: String
     $phone: String
     $password: String
+    $avatar: String
   ) {
     updateMyProfile(
       firstName: $firstName
       lastName: $lastName
       phone: $phone
       password: $password
+      avatar: $avatar
     ) {
       _id
       name
@@ -39,6 +50,7 @@ const UPDATE_EMPLOYEE_PROFILE = gql`
       lastName
       age
       gender
+      avatar
       phone
       registerNumber
       username
@@ -54,6 +66,7 @@ type EmployeeProfile = {
   lastName: string;
   age: number;
   gender: "MALE" | "FEMALE";
+  avatar?: string | null;
   phone: string;
   registerNumber: string;
   username: string;
@@ -63,13 +76,11 @@ type EmployeeProfile = {
 type ProfileForm = Pick<
   EmployeeProfile,
   "firstName" | "lastName" | "phone"
-> & { password: string };
-type ProfileUpdateVariables = Omit<ProfileForm, "password"> & {
+> & { password: string; avatar: string };
+type ProfileUpdateVariables = Omit<ProfileForm, "password" | "avatar"> & {
   password: string | null;
+  avatar: string | null;
 };
-
-const inputClass =
-  "mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-[#FAF8F5] px-4 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-900/5 read-only:bg-stone-100";
 
 const labelClass = "block text-sm font-medium text-stone-700";
 
@@ -87,6 +98,7 @@ export const ProfilePage = () => {
     lastName: editedForm.lastName ?? employee?.lastName ?? "",
     phone: editedForm.phone ?? employee?.phone ?? "",
     password: editedForm.password ?? "",
+    avatar: editedForm.avatar ?? employee?.avatar ?? "",
   };
 
   const [updateProfile, { loading: saving }] = useMutation<
@@ -99,6 +111,7 @@ export const ProfilePage = () => {
         lastName: employee.lastName,
         phone: employee.phone,
         password: "",
+        avatar: employee.avatar ?? "",
       });
       setFormError("");
       setNotice("Мэдээлэл амжилттай хадгалагдлаа.");
@@ -132,21 +145,17 @@ export const ProfilePage = () => {
         lastName: form.lastName.trim(),
         phone: form.phone.trim(),
         password: form.password || null,
+        avatar: form.avatar.trim() || null,
       },
     });
   };
 
   return (
-    <PageContainer className="bg-[#FAF8F5]">
-      <PageContent className="pt-8 sm:pt-10">
-        <div className="mx-auto w-full max-w-4xl">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">
-            Employee profile
-          </p>
+    <PageContainer>
+      <PageContent>
           <PageTitle
             title="Ажилтны мэдээлэл"
             description="Өөрийн бүртгэлтэй мэдээллийг харах, шинэчлэх."
-            className="mb-8 mt-2"
           />
           {loading && (
             <p role="status" className="text-sm text-stone-500">
@@ -163,12 +172,21 @@ export const ProfilePage = () => {
           )}
         {employee && (
           <>
-            <section className="mb-6 flex flex-col gap-4 rounded-3xl border border-stone-200/80 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-7">
+            <section className={`${pageCardClass} flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8`}>
               <div className="flex min-w-0 items-center gap-4">
-                <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-lg font-semibold text-stone-700">
-                  {`${employee.lastName?.[0] ?? ""}${employee.firstName?.[0] ?? ""}` ||
-                    employee.name.slice(0, 2)}
-                </div>
+                {employee.avatar ? (
+                  <img
+                    src={employee.avatar}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="size-14 shrink-0 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-lg font-semibold text-stone-700">
+                    {`${employee.lastName?.[0] ?? ""}${employee.firstName?.[0] ?? ""}` ||
+                      employee.name.slice(0, 2)}
+                  </div>
+                )}
                 <div className="min-w-0">
                   <h2 className="truncate text-lg font-semibold tracking-tight text-stone-900 sm:text-xl">
                     {`${employee.lastName} ${employee.firstName}`.trim() ||
@@ -186,7 +204,7 @@ export const ProfilePage = () => {
 
             <form
               onSubmit={handleSubmit}
-              className="overflow-hidden rounded-3xl border border-stone-200/80 bg-white shadow-sm"
+              className={`${pageCardClass} overflow-hidden`}
             >
               <section className="p-6 sm:p-8">
                 <div className="mb-6">
@@ -210,7 +228,7 @@ export const ProfilePage = () => {
                         })
                       }
                       required
-                      className={inputClass}
+                      className={`${pageInputClass} mt-2 read-only:bg-stone-100`}
                     />
                   </label>
                   <label className={labelClass}>
@@ -225,7 +243,7 @@ export const ProfilePage = () => {
                         })
                       }
                       required
-                      className={inputClass}
+                      className={`${pageInputClass} mt-2 read-only:bg-stone-100`}
                     />
                   </label>
                   <label className={labelClass}>
@@ -240,19 +258,28 @@ export const ProfilePage = () => {
                         })
                       }
                       required
-                      className={inputClass}
+                      className={`${pageInputClass} mt-2 read-only:bg-stone-100`}
                     />
                   </label>
+                  <div className="sm:col-span-2">
+                    <AvatarInput
+                      value={form.avatar}
+                      onChange={(avatar) =>
+                        setEditedForm({ ...editedForm, avatar })
+                      }
+                      disabled={saving}
+                    />
+                  </div>
                   <label className={labelClass}>
                     Нас
-                    <input value={employee.age} readOnly className={inputClass} />
+                    <input value={employee.age} readOnly className={`${pageInputClass} mt-2 read-only:bg-stone-100`} />
                   </label>
                   <label className={labelClass}>
                     Хүйс
                     <input
                       value={employee.gender === "MALE" ? "Эрэгтэй" : "Эмэгтэй"}
                       readOnly
-                      className={inputClass}
+                      className={`${pageInputClass} mt-2 read-only:bg-stone-100`}
                     />
                   </label>
                   <label className={labelClass}>
@@ -260,7 +287,7 @@ export const ProfilePage = () => {
                     <input
                       value={employee.registerNumber}
                       readOnly
-                      className={inputClass}
+                      className={`${pageInputClass} mt-2 read-only:bg-stone-100`}
                     />
                   </label>
                   <label className={labelClass}>
@@ -268,13 +295,13 @@ export const ProfilePage = () => {
                     <input
                       value={employee.username}
                       readOnly
-                      className={inputClass}
+                      className={`${pageInputClass} mt-2 read-only:bg-stone-100`}
                     />
                   </label>
                 </div>
               </section>
 
-              <section className="border-t border-stone-100 bg-[#FAF8F5]/70 p-6 sm:p-8">
+              <section className="space-y-5 border-t border-stone-200 bg-[#FAF8F5] p-6 sm:p-8">
                 <div className="mb-5">
                   <h3 className="text-base font-semibold tracking-tight text-stone-900">
                     Нууц үг солих
@@ -283,7 +310,7 @@ export const ProfilePage = () => {
                     Өөрчлөхгүй бол энэ талбарыг хоосон үлдээнэ үү.
                   </p>
                 </div>
-                <label className={`${labelClass} max-w-xl`}>
+                <label                 className={`${labelClass} max-w-xl`}>
                   Шинэ нууц үг
                   <input
                     type="password"
@@ -295,7 +322,7 @@ export const ProfilePage = () => {
                         password: event.currentTarget.value,
                       })
                     }
-                    className={inputClass}
+                    className={`${pageInputClass} mt-2`}
                   />
                 </label>
               </section>
@@ -316,7 +343,7 @@ export const ProfilePage = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-stone-900 px-6 text-sm font-semibold text-white transition hover:bg-stone-700 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={`${primaryButtonClass} h-11 px-6`}
                 >
                   {saving ? "Хадгалж байна..." : "Хадгалах"}
                 </button>
@@ -324,7 +351,6 @@ export const ProfilePage = () => {
             </form>
           </>
         )}
-        </div>
       </PageContent>
     </PageContainer>
   );

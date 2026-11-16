@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { ConsultationForm } from "../../../components/ConsultationForm";
 import { APPOINTMENT_CANCEL } from "../graphql/mutation/appointmentCancel";
+import { secondaryButtonClass, dangerButtonClass } from "../../app/ui/page";
 
 interface Appointment {
   _id: string;
@@ -88,7 +89,7 @@ export const AppointmentList = ({
 
   if (!appointments || appointments.length === 0) {
     return (
-      <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[#e4dfd6] bg-[#fbfaf8] py-8 text-center">
+      <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-stone-200 bg-stone-50 py-8 text-center">
         <CalendarDays size={20} className="text-[#b5ab98]" />
         <p className="text-[11px] text-[#9b968d]">Үзлэг одоогоор бүртгэгдээгүй байна.</p>
       </div>
@@ -132,12 +133,12 @@ export const AppointmentList = ({
           return (
             <div
               key={app._id}
-              className={`space-y-3.5 rounded-2xl border p-4 transition ${
+              className={`space-y-3.5 rounded-2xl border border-stone-200 p-4 transition ${
                 isScheduled
-                  ? "border-[#eadfca] bg-[#fbf7f0]"
+                  ? "bg-[#FAF8F5]"
                   : isCancelled
-                  ? "border-[#efe6e3] bg-white opacity-70"
-                  : "border-[#ece8e1] bg-[#fbfaf8]"
+                  ? "bg-white opacity-70"
+                  : "bg-white"
               }`}
             >
               {/* Огноо, цаг, төлөв */}
@@ -176,7 +177,7 @@ export const AppointmentList = ({
                           type="button"
                           disabled={isCancelling}
                           onClick={() => handleCancel(app._id)}
-                          className="rounded-xl bg-[#b0645a] px-3 py-2 text-[11px] font-medium text-white transition hover:bg-[#9a5148] active:scale-95 disabled:opacity-60"
+                          className={`${dangerButtonClass} px-3 py-2 text-xs`}
                         >
                           {isCancelling ? "..." : "Тийм"}
                         </button>
@@ -184,7 +185,7 @@ export const AppointmentList = ({
                           type="button"
                           disabled={isCancelling}
                           onClick={() => setConfirmId(null)}
-                          className="rounded-xl border border-[#e9e4dc] px-3 py-2 text-[11px] font-medium text-[#777168] transition hover:bg-[#f8f6f2]"
+                          className={`${secondaryButtonClass} px-3 py-2 text-xs`}
                         >
                           Үгүй
                         </button>
@@ -193,7 +194,7 @@ export const AppointmentList = ({
                       <button
                         type="button"
                         onClick={() => setConfirmId(app._id)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-[#ecd9d5] px-3 py-2 text-[11px] font-medium text-[#b0645a] transition hover:bg-[#f8ebe8] active:scale-95"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100"
                       >
                         <Trash2 size={13} /> Цуцлах
                       </button>
@@ -202,7 +203,7 @@ export const AppointmentList = ({
                   <button
                     type="button"
                     onClick={() => setSelectedAppointment(app)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#d9cbb5] bg-[#f6f0e6] px-4 py-2.5 text-sm font-semibold text-[#725d3e] transition hover:bg-[#efe6d8]"
+                    className={`${secondaryButtonClass} px-4 py-2.5`}
                   >
                     <Eye size={15} /> Үзэх
                   </button>

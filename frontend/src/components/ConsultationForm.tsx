@@ -5,6 +5,12 @@ import { FileText, Printer, X } from "lucide-react";
 import type { Appointment } from "../modules/patient/types/patient";
 import { APPOINTMENT_COMPLETE } from "../modules/patient/graphql/mutation/appointmentComplete";
 import { useAuth } from "../modules/auth/AuthContext";
+import {
+  pageCardClass,
+  pageTextAreaClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from "../modules/app/ui/page";
 
 interface ConsultationFormProps {
   appointment: Appointment;
@@ -87,16 +93,16 @@ export const ConsultationForm = ({
         <section
           aria-labelledby="consultation-title"
           aria-modal="true"
-          className="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-[28px] border border-[#e9e5de] bg-[#fbfaf8] shadow-[0_20px_60px_rgba(60,52,41,0.2)] sm:rounded-[24px]"
+          className={`${pageCardClass} max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-[28px] sm:rounded-[24px]`}
           role="dialog"
         >
-          <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[#f0ede8] bg-[#fbfaf8]/95 px-6 py-5 backdrop-blur-md">
+          <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-stone-200 bg-white/95 px-6 py-5 backdrop-blur-md">
             <div className="flex items-start gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f1ece3] text-[#89785f]">
                 <FileText size={18} />
               </div>
               <div>
-                <h2 id="consultation-title" className="text-lg font-semibold text-[#36342f]">
+                <h2 id="consultation-title" className="text-2xl font-bold text-stone-900">
                   Үзлэгийн тэмдэглэл
                 </h2>
                 <p className="mt-1 text-xs text-[#89847b]">
@@ -146,7 +152,7 @@ export const ConsultationForm = ({
                 }}
                 disabled={isReadOnly}
                 rows={3}
-                className="w-full resize-y rounded-xl border border-[#e8e3db] bg-white px-3.5 py-3 text-sm leading-relaxed text-[#37342f] outline-none transition placeholder:text-[#b7b1a9] focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10 disabled:bg-[#f5f3ef]"
+                className={pageTextAreaClass}
                 placeholder="Үйлчлүүлэгчийн зовиур, илэрсэн шинж тэмдгийг тэмдэглэнэ үү."
               />
             </label>
@@ -161,7 +167,7 @@ export const ConsultationForm = ({
                 }}
                 disabled={isReadOnly}
                 rows={4}
-                className="w-full resize-y rounded-xl border border-[#e8e3db] bg-white px-3.5 py-3 text-sm leading-relaxed text-[#37342f] outline-none transition placeholder:text-[#b7b1a9] focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10 disabled:bg-[#f5f3ef]"
+                className={pageTextAreaClass}
                 placeholder="Үзлэгийн үр дүн, ажиглалтыг тэмдэглэнэ үү."
               />
             </label>
@@ -176,7 +182,7 @@ export const ConsultationForm = ({
                 }}
                 disabled={isReadOnly}
                 rows={3}
-                className="w-full resize-y rounded-xl border border-[#e8e3db] bg-white px-3.5 py-3 text-sm leading-relaxed text-[#37342f] outline-none transition placeholder:text-[#b7b1a9] focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10 disabled:bg-[#f5f3ef]"
+                className={pageTextAreaClass}
                 placeholder="Эмчилгээ, зөвлөгөө болон дараагийн алхмыг тэмдэглэнэ үү."
               />
             </label>
@@ -192,7 +198,7 @@ export const ConsultationForm = ({
                 disabled={isReadOnly}
                 rows={3}
                 required={!isReadOnly}
-                className="w-full resize-y rounded-xl border border-[#e8e3db] bg-white px-3.5 py-3 text-sm leading-relaxed text-[#37342f] outline-none transition placeholder:text-[#b7b1a9] focus:border-[#ad9272] focus:ring-4 focus:ring-[#ad9272]/10 disabled:bg-[#f5f3ef]"
+                className={pageTextAreaClass}
                 placeholder="Оношоо оруулна уу."
               />
             </label>
@@ -207,7 +213,7 @@ export const ConsultationForm = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl border border-[#e9e4dc] bg-white px-5 py-3 text-sm font-medium text-[#777168] transition hover:bg-[#f8f6f2]"
+                className={secondaryButtonClass}
               >
                 Хаах
               </button>
@@ -215,7 +221,7 @@ export const ConsultationForm = ({
                 <button
                   type="button"
                   onClick={printReport}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#d9cbb5] bg-[#f6f0e6] px-5 py-3 text-sm font-semibold text-[#725d3e] transition hover:bg-[#efe6d8]"
+                  className={secondaryButtonClass}
                 >
                   <Printer size={16} /> PDF / Хэвлэх
                 </button>
@@ -224,7 +230,7 @@ export const ConsultationForm = ({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="rounded-2xl bg-stone-700 px-5 py-3 text-sm font-bold tracking-wide text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={primaryButtonClass}
                 >
                   {loading ? "Хадгалж байна..." : "Хадгалах"}
                 </button>

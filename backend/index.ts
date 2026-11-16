@@ -27,7 +27,7 @@ const startServer = async () => {
     await apolloServer.start();
 
     app.use(cors(corsOptions));
-    app.use(express.json({ limit: "16kb" }));
+    app.use(express.json({ limit: "3mb" }));
     app.use("/auth", authRouter);
     app.use(
       "/graphql",

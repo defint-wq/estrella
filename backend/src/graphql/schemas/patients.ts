@@ -82,6 +82,7 @@ export const types = () => `
         lastName: String!
         age: Int!
         gender: SexStatus!
+        avatar: String
         phone: String!
         registerNumber: String!
         username: String!
@@ -115,11 +116,22 @@ const employeeCreateParams = `
     role: EmployeeRole!
 `;
 
+const employeeUpdateParams = `
+    firstName: String
+    lastName: String
+    phone: String
+    username: String
+    registerNumber: String
+    avatar: String
+    role: EmployeeRole
+`;
+
 const profileUpdateParams = `
     firstName: String
     lastName: String
     phone: String
     password: String
+    avatar: String
 `;
 
 export const queries = `
@@ -132,7 +144,7 @@ export const queries = `
 export const mutations = `
     patientAdd(${patientParams}): Patient
     patientEdit(_id: ID!, ${patientParams}): Patient
-    patientRemove(ids: [ID]!): String
+    patientRemove(ids: [ID!]!): String!
 
     appointmentAdd(${appointmentParams}): Appointment
     appointmentEdit(_id: ID!, ${appointmentParams}): Appointment
@@ -149,6 +161,8 @@ export const mutations = `
 
     createEmployee(${employeeCreateParams}): Employee
     employeeAdd(${employeeCreateParams}): Employee
+    updateEmployee(_id: ID!, ${employeeUpdateParams}): Employee!
+    deleteEmployee(_id: ID!): String!
     updateMyProfile(${profileUpdateParams}): Employee!
     employeeProfileUpdate(${profileUpdateParams}): Employee!
 `;

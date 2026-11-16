@@ -19,7 +19,7 @@ export const CompletedAppointments = () => {
         {[0, 1, 2].map((item) => (
           <div
             key={item}
-            className="h-24 animate-pulse rounded-2xl border border-[#ece8e1] bg-white"
+            className="h-24 animate-pulse rounded-2xl border border-stone-200 bg-white"
           />
         ))}
       </div>
@@ -39,7 +39,7 @@ export const CompletedAppointments = () => {
 
   if (completed.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-[20px] border border-dashed border-[#e4dfd6] bg-[#fbfaf8] py-12 text-center">
+      <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-stone-200 bg-stone-50 py-12 text-center">
         <CalendarDays size={20} className="text-[#b5ab98]" />
         <p className="text-sm text-[#9b968d]">
           {searchQuery.trim()

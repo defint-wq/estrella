@@ -17,9 +17,6 @@ importers:
       '@as-integrations/express5':
         specifier: ^1.1.2
         version: 1.1.2(@apollo/server@5.5.1(graphql@16.14.0))(express@5.2.1)
-      '@tabler/icons-react':
-        specifier: ^3.44.0
-        version: 3.44.0(react@19.2.6)
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
@@ -714,14 +711,6 @@ packages:
 
   '@spawm/resource@0.1.5':
     resolution: {integrity: sha512-zx2GAQfOdXYPe5hwVzLpTsCHlwn662zgyWUcM7LleDYfeVr4+0D5MrAkR3QzfBH1VF5MyShTvMZOoKFVtce0Yg==}
-
-  '@tabler/icons-react@3.44.0':
-    resolution: {integrity: sha512-8+rvzBbVm/1Z3sG3x7GUNAaxIKxwgz8xaMhRs23nrCnMTKRFAhEC+82zAIFeAA0seXdrAGX5HFCkaLpGK2rVHg==}
-    peerDependencies:
-      react: '>= 16'
-
-  '@tabler/icons@3.44.0':
-    resolution: {integrity: sha512-Wn0AOZG9sg0L+bjfMqq4eNhC6pQjIrk94LvvWYNYkY8KH8wC3YILRzQlrnVJc4FUeMxH/AK97QsYCX35H3LndA==}
 
   '@tailwindcss/node@4.3.0':
     resolution: {integrity: sha512-aFb4gUhFOgdh9AXo4IzBEOzBkkAxm9VigwDJnMIYv3lcfXCJVesNfbEaBl4BNgVRyid92AmdviqwBUBRKSeY3g==}
@@ -2665,13 +2654,6 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@spawm/resource@0.1.5': {}
-
-  '@tabler/icons-react@3.44.0(react@19.2.6)':
-    dependencies:
-      '@tabler/icons': 3.44.0
-      react: 19.2.6
-
-  '@tabler/icons@3.44.0': {}
 
   '@tailwindcss/node@4.3.0':
     dependencies:

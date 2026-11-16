@@ -1,5 +1,6 @@
-import { GraphQLError } from 'graphql';
-import { IContext } from '../../../connectionResolver.js'; // 👈 .js өргөтгөл нэмэв
+import { GraphQLError } from "graphql";
+import mongoose from "mongoose";
+import { IContext } from "../../../connectionResolver.js";
 import { requireRoles } from "../../auth/session.js";
 
 interface PatientAddArgs {
@@ -54,5 +55,80 @@ export const patientMutations = {
         extensions: { code: 'INTERNAL_SERVER_ERROR' }
       });
     }
-  }
+  },
+
+  patientEdit: async (
+    _parent: unknown,
+    args: PatientAddArgs & { _id: string },
+    context: IContext,
+  ) => {
+    requireRoles(context.authUser, "ADMIN", "RECEPTION");
+    if (!mongoose.Types.ObjectId.isValid(args._id)) {
+      throw new GraphQLError("Invalid patient ID.", {
+        extensions: { code: "BAD_USER_INPUT" },
+      });
+    }
+
+    const registrationNumber = args.registrationNumber.trim().toUpperCase();
+    const firstName = args.firstName.trim();
+    const lastName = args.lastName.trim();
+    if (
+      !registrationNumber ||
+      !firstName ||
+      !lastName ||
+      !Number.isInteger(args.age) ||
+      args.age < 1 ||
+      args.age > 130 ||
+      (args.sex !== undefined &&
+        args.sex !== "MALE" &&
+        args.sex !== "FEMALE")
+    ) {
+      throw new GraphQLError("Invalid patient details.", {
+        extensions: { code: "BAD_USER_INPUT" },
+      });
+    }
+
+    const patient = await context.models.Patients.findById(args._id);
+    if (!patient) {
+      throw new GraphQLError("Patient not found.", {
+        extensions: { code: "NOT_FOUND" },
+      });
+    }
+
+    const duplicate = await context.models.Patients.findOne({
+      registrationNumber,
+      _id: { $ne: patient._id },
+    });
+    if (duplicate) {
+      throw new GraphQLError(
+        "A patient with this registration number already exists.",
+        { extensions: { code: "BAD_USER_INPUT" } },
+      );
+    }
+
+    patient.registrationNumber = registrationNumber;
+    patient.firstName = firstName;
+    patient.lastName = lastName;
+    patient.age = args.age;
+    if (args.sex) patient.sex = args.sex;
+    return patient.save();
+  },
+
+  patientRemove: async (
+    _parent: unknown,
+    args: { ids: string[] },
+    context: IContext,
+  ) => {
+    requireRoles(context.authUser, "ADMIN", "RECEPTION");
+    if (
+      args.ids.length === 0 ||
+      args.ids.some((id) => !mongoose.Types.ObjectId.isValid(id))
+    ) {
+      throw new GraphQLError("At least one valid patient ID is required.", {
+        extensions: { code: "BAD_USER_INPUT" },
+      });
+    }
+
+    return context.models.Patients.removePatients(args.ids);
+  },
 };
