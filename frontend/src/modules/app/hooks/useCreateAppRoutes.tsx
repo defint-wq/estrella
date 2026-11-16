@@ -11,26 +11,26 @@ import { PatientRoutes } from "../components/PatientRoutes";
 import { ProtectedRoute } from "../../auth/ProtectedRoute";
 import { RoleGuard } from "../../auth/RoleGuard";
 
-const HomeLayout = lazy(() =>
-  import("../../../pages/home/HomeLayout").then((module) => ({
-    default: module.HomeLayout,
+const HomePage = lazy(() =>
+  import("../../home/page").then((module) => ({
+    default: module.HomePage,
   })),
 );
 
 const PendingAppointments = lazy(() =>
-  import("../../../pages/home/PendingAppointments").then((module) => ({
+  import("../../home/components/PendingAppointments").then((module) => ({
     default: module.PendingAppointments,
   })),
 );
 
 const CompletedAppointments = lazy(() =>
-  import("../../../pages/home/CompletedAppointments").then((module) => ({
+  import("../../home/components/CompletedAppointments").then((module) => ({
     default: module.CompletedAppointments,
   })),
 );
 
 const ProfilePage = lazy(() =>
-  import("../../../pages/profile/ProfilePage").then((module) => ({
+  import("../../profile/page").then((module) => ({
     default: module.ProfilePage,
   })),
 );
@@ -42,7 +42,7 @@ const LoginPage = lazy(() =>
 );
 
 const AdminDashboard = lazy(() =>
-  import("../../../pages/admin/AdminDashboard").then((module) => ({
+  import("../../admin/page").then((module) => ({
     default: module.AdminDashboard,
   })),
 );
@@ -70,7 +70,7 @@ export const useCreateAppRouter = () => {
                 path="/home"
                 element={
                   <Suspense fallback={<HomeFallback />}>
-                    <HomeLayout />
+                    <HomePage />
                   </Suspense>
                 }
               >

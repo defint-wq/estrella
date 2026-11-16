@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import { useMutation } from "@apollo/client/react";
 import { AlertTriangle, UserPlus, X } from "lucide-react";
-import { PATIENT_ADD } from "../graphql/mutation/patientAdd";
-import { GET_PATIENTS } from "../graphql/query/patient";
 import { parseRegisterNumber } from "../../app/ui/registerParser";
+import type { PatientAddVariables } from "../types/patient";
 import {
   pageCardClass,
   pageInputClass,
@@ -13,7 +11,9 @@ import {
 
 interface PatientAddModalProps {
   onClose: () => void;
-  onSuccess: () => void;
+  onSubmit: (values: PatientAddVariables) => void;
+  loading: boolean;
+  error?: string;
 }
 
 const labelClass =
@@ -21,25 +21,19 @@ const labelClass =
 
 const inputClass = pageInputClass;
 
-export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) => {
+export const PatientAddModal = ({
+  onClose,
+  onSubmit,
+  loading,
+  error,
+}: PatientAddModalProps) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [age, setAge] = useState<number>(0);
   const [sex, setSex] = useState("MALE");
   const [registerInvalid, setRegisterInvalid] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  const [addPatient, { loading }] = useMutation(PATIENT_ADD, {
-    refetchQueries: [
-      {
-        query: GET_PATIENTS,
-        variables: { page: 1, perPage: 10 },
-      },
-    ],
-    onCompleted: () => onSuccess(),
-    onError: (err) => setErrorMsg("Үйлчлүүлэгч бүртгэхэд алдаа гарлаа: " + err.message),
-  });
+  const [validationError, setValidationError] = useState("");
 
   // Esc дарахад хаах
   useEffect(() => {
@@ -51,7 +45,7 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
   const handleRegisterChange = (value: string) => {
     const upper = value.toUpperCase();
     setRegistrationNumber(upper);
-    setErrorMsg("");
+    setValidationError("");
 
     if (upper.length === 10) {
       const result = parseRegisterNumber(upper);
@@ -76,15 +70,13 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    setErrorMsg("");
-    addPatient({
-      variables: {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        registrationNumber,
-        age: Number(age),
-        sex,
-      },
+    setValidationError("");
+    onSubmit({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      registrationNumber,
+      age: Number(age),
+      sex,
     });
   };
 
@@ -208,9 +200,9 @@ export const PatientAddModal = ({ onClose, onSuccess }: PatientAddModalProps) =>
             </div>
           </div>
 
-          {errorMsg && (
+          {(validationError || error) && (
             <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11px] font-medium text-rose-700">
-              {errorMsg}
+              {validationError || error}
             </div>
           )}
 

@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { useMutation } from "@apollo/client/react";
 import { FileText, Printer, X } from "lucide-react";
-import type { Appointment } from "../modules/patient/types/patient";
-import { APPOINTMENT_COMPLETE } from "../modules/patient/graphql/mutation/appointmentComplete";
-import { useAuth } from "../modules/auth/AuthContext";
+import type {
+  Appointment,
+  AppointmentCompleteVariables,
+} from "../modules/patient/types/patient";
 import {
   pageCardClass,
   pageTextAreaClass,
@@ -16,6 +16,10 @@ interface ConsultationFormProps {
   appointment: Appointment;
   patientName: string;
   registrationNumber: string;
+  canEdit: boolean;
+  saving: boolean;
+  error?: string;
+  onSave: (variables: AppointmentCompleteVariables) => Promise<void>;
   onClose: () => void;
   onSaved?: () => void;
 }
@@ -36,53 +40,48 @@ export const ConsultationForm = ({
   appointment,
   patientName,
   registrationNumber,
+  canEdit,
+  saving,
+  error = "",
+  onSave,
   onClose,
   onSaved,
 }: ConsultationFormProps) => {
-  const { user } = useAuth();
   const [examinationNotes, setExaminationNotes] = useState(appointment.examinationNotes ?? "");
   const [symptoms, setSymptoms] = useState(appointment.symptoms ?? "");
   const [treatment, setTreatment] = useState(appointment.treatment ?? "");
   const [diagnosis, setDiagnosis] = useState(appointment.diagnosis ?? "");
   const [saved, setSaved] = useState(appointment.status === "COMPLETED");
-  const [error, setError] = useState("");
-  const canEdit =
-    user?.role === "ADMIN" ||
-    (user?.role === "DOCTOR" && appointment.doctorId === user._id);
+  const [validationError, setValidationError] = useState("");
   const isReadOnly = appointment.status === "CANCELLED" || !canEdit;
-
-  const [saveConsultation, { loading }] = useMutation(APPOINTMENT_COMPLETE, {
-    refetchQueries: ["GetPatients"],
-    awaitRefetchQueries: true,
-    onCompleted: () => {
-      setSaved(true);
-      onSaved?.();
-    },
-    onError: (mutationError) => setError(`Хадгалахад алдаа гарлаа: ${mutationError.message}`),
-  });
 
   const markChanged = () => {
     setSaved(false);
-    setError("");
+    setValidationError("");
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isReadOnly) return;
     if (!diagnosis.trim()) {
-      setError("Оношоо оруулна уу.");
+      setValidationError("Оношоо оруулна уу.");
       return;
     }
 
-    void saveConsultation({
-      variables: {
+    setValidationError("");
+    try {
+      await onSave({
         appointmentId: appointment._id,
         diagnosis: diagnosis.trim(),
         examinationNotes: examinationNotes.trim(),
         symptoms: symptoms.trim(),
         treatment: treatment.trim(),
-      },
-    });
+      });
+      setSaved(true);
+      onSaved?.();
+    } catch {
+      // The parent surfaces the mutation error through the error prop.
+    }
   };
 
   const printReport = () => window.print();
@@ -203,9 +202,9 @@ export const ConsultationForm = ({
               />
             </label>
 
-            {error && (
+            {(validationError || error) && (
               <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {error}
+                {validationError || error}
               </div>
             )}
 
@@ -229,10 +228,10 @@ export const ConsultationForm = ({
               {!isReadOnly && (
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={saving}
                   className={primaryButtonClass}
                 >
-                  {loading ? "Хадгалж байна..." : "Хадгалах"}
+                  {saving ? "Хадгалж байна..." : "Хадгалах"}
                 </button>
               )}
             </div>

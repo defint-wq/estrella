@@ -1,6 +1,6 @@
 import { CalendarDays, Clock, Stethoscope, type LucideIcon } from "lucide-react";
-import type { DashboardAppointment } from "../pages/home/types";
-import { pageCardClass, secondaryButtonClass } from "../modules/app/ui/page";
+import type { DashboardAppointment } from "../types";
+import { pageCardClass, secondaryButtonClass } from "../../app/ui/page";
 
 interface AppointmentCardProps {
   appointment: DashboardAppointment;

@@ -1,6 +1,6 @@
 import type {
   AppointmentSearchResult,
-} from "../../modules/patient/types/patient";
+} from "../patient/types/patient";
 
 export type DashboardAppointment = AppointmentSearchResult;
 

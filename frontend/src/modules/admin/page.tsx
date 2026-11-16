@@ -1,6 +1,4 @@
 import { useRef, useState, type FormEvent } from "react";
-import { gql } from "@apollo/client";
-import { useMutation, useQuery } from "@apollo/client/react";
 import { Pencil, Trash2, UserPlus, X } from "lucide-react";
 import {
   PageContainer,
@@ -11,120 +9,43 @@ import {
   pageInputClass,
   primaryButtonClass,
   secondaryButtonClass,
-} from "../../modules/app/ui/page";
-import { parseEmployeeRegisterNumber } from "../../modules/app/ui/registerParser";
-import { useAuth } from "../../modules/auth/AuthContext";
-import { AvatarInput } from "../../modules/app/ui/AvatarInput";
-
-const GET_EMPLOYEES = gql`
-  query GetEmployees {
-    employees {
-      _id
-      name
-      firstName
-      lastName
-      registerNumber
-      avatar
-      username
-      phone
-      role
-    }
-  }
-`;
-
-const ADD_EMPLOYEE = gql`
-  mutation CreateEmployee(
-    $firstName: String!
-    $lastName: String!
-    $phone: String!
-    $registerNumber: String!
-    $username: String!
-    $password: String!
-    $role: EmployeeRole!
-  ) {
-    createEmployee(
-      firstName: $firstName
-      lastName: $lastName
-      phone: $phone
-      registerNumber: $registerNumber
-      username: $username
-      password: $password
-      role: $role
-    ) {
-      _id
-      username
-      firstName
-      lastName
-    }
-  }
-`;
-
-const UPDATE_EMPLOYEE = gql`
-  mutation UpdateEmployee(
-    $_id: ID!
-    $firstName: String
-    $lastName: String
-    $phone: String
-    $username: String
-    $registerNumber: String
-    $avatar: String
-    $role: EmployeeRole
-  ) {
-    updateEmployee(
-      _id: $_id
-      firstName: $firstName
-      lastName: $lastName
-      phone: $phone
-      username: $username
-      registerNumber: $registerNumber
-      avatar: $avatar
-      role: $role
-    ) {
-      _id
-      firstName
-      lastName
-      username
-      phone
-      registerNumber
-      avatar
-      role
-    }
-  }
-`;
-
-const DELETE_EMPLOYEE = gql`
-  mutation DeleteEmployee($_id: ID!) {
-    deleteEmployee(_id: $_id)
-  }
-`;
-
-type EmployeeRow = {
-  _id: string;
-  name: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  phone: string;
-  registerNumber: string;
-  avatar?: string | null;
-  role: "ADMIN" | "RECEPTION" | "DOCTOR";
-};
+} from "../app/ui/page";
+import { parseEmployeeRegisterNumber } from "../app/ui/registerParser";
+import { useAuth } from "../auth/AuthContext";
+import { AvatarInput } from "../app/ui/AvatarInput";
+import { useEmployees } from "./hooks/useEmployees";
+import type {
+  CreateEmployeeVariables,
+  EmployeeRecord,
+  UpdateEmployeeVariables,
+} from "./types/employee";
 
 const inputClass = pageInputClass;
 
 export const AdminDashboard = () => {
   const { user } = useAuth();
   const formRef = useRef<HTMLFormElement>(null);
-  const { data, loading, error } = useQuery<{ employees: EmployeeRow[] }>(
-    GET_EMPLOYEES,
-  );
+  const {
+    employees,
+    loading,
+    error,
+    creating: saving,
+    createError,
+    createEmployee,
+    updating,
+    updateError,
+    updateEmployee,
+    deleting,
+    deleteError,
+    deleteEmployee,
+  } = useEmployees();
   const [registerNumber, setRegisterNumber] = useState("");
   const [registration, setRegistration] = useState<ReturnType<
     typeof parseEmployeeRegisterNumber
   >>(null);
   const [notice, setNotice] = useState("");
   const [formError, setFormError] = useState("");
-  const [editingEmployee, setEditingEmployee] = useState<EmployeeRow | null>(
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeRecord | null>(
     null,
   );
   const [editingRegisterNumber, setEditingRegisterNumber] = useState("");
@@ -132,36 +53,11 @@ export const AdminDashboard = () => {
     typeof parseEmployeeRegisterNumber
   >>(null);
   const [editingAvatar, setEditingAvatar] = useState("");
-  const [addEmployee, { loading: saving }] = useMutation(ADD_EMPLOYEE, {
-    refetchQueries: [{ query: GET_EMPLOYEES }],
-    onCompleted: () => {
-      setNotice("Ажилтны бүртгэл амжилттай үүслээ.");
-      setFormError("");
-      setRegisterNumber("");
-      setRegistration(null);
-      formRef.current?.reset();
-    },
-    onError: (cause) => setFormError(cause.message),
-  });
-  const [updateEmployee, { loading: updating }] = useMutation(UPDATE_EMPLOYEE, {
-    refetchQueries: [{ query: GET_EMPLOYEES }],
-    awaitRefetchQueries: true,
-    onCompleted: () => {
-      setEditingEmployee(null);
-      setNotice("Ажилтны мэдээлэл шинэчлэгдлээ.");
-      setFormError("");
-    },
-    onError: (cause) => setFormError(cause.message),
-  });
-  const [deleteEmployee, { loading: deleting }] = useMutation(DELETE_EMPLOYEE, {
-    refetchQueries: [{ query: GET_EMPLOYEES }],
-    awaitRefetchQueries: true,
-    onCompleted: () => {
-      setNotice("Ажилтны бүртгэл устгагдлаа.");
-      setFormError("");
-    },
-    onError: (cause) => setFormError(cause.message),
-  });
+  const operationError =
+    formError ||
+    createError?.message ||
+    updateError?.message ||
+    deleteError?.message;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -182,17 +78,25 @@ export const AdminDashboard = () => {
     }
     setNotice("");
     setFormError("");
-    addEmployee({
-      variables: {
-        firstName: String(formData.get("firstName") ?? "").trim(),
-        lastName: String(formData.get("lastName") ?? "").trim(),
-        phone: String(formData.get("phone") ?? "").trim(),
-        registerNumber: parsedRegistration.registerNumber,
-        username: String(formData.get("username") ?? "").trim(),
-        password,
-        role: String(formData.get("role") ?? "DOCTOR"),
+    const variables: CreateEmployeeVariables = {
+      firstName: String(formData.get("firstName") ?? "").trim(),
+      lastName: String(formData.get("lastName") ?? "").trim(),
+      phone: String(formData.get("phone") ?? "").trim(),
+      registerNumber: parsedRegistration.registerNumber,
+      username: String(formData.get("username") ?? "").trim(),
+      password,
+      role: formData.get("role") === "RECEPTION" ? "RECEPTION" : "DOCTOR",
+    };
+    void createEmployee(variables).then(
+      () => {
+        setNotice("Ажилтны бүртгэл амжилттай үүслээ.");
+        setFormError("");
+        setRegisterNumber("");
+        setRegistration(null);
+        formRef.current?.reset();
       },
-    });
+      (cause: unknown) => setFormError(getErrorMessage(cause)),
+    );
   };
 
   const handleUpdateEmployee = (event: FormEvent<HTMLFormElement>) => {
@@ -208,21 +112,27 @@ export const AdminDashboard = () => {
     }
     setNotice("");
     setFormError("");
-    updateEmployee({
-      variables: {
-        _id: editingEmployee._id,
-        firstName: String(formData.get("firstName") ?? "").trim(),
-        lastName: String(formData.get("lastName") ?? "").trim(),
-        phone: String(formData.get("phone") ?? "").trim(),
-        username: String(formData.get("username") ?? "").trim(),
-        registerNumber: parsedRegistration.registerNumber,
-        avatar: editingAvatar.trim() || null,
-        role: String(formData.get("role") ?? "DOCTOR"),
+    const variables: UpdateEmployeeVariables = {
+      _id: editingEmployee._id,
+      firstName: String(formData.get("firstName") ?? "").trim(),
+      lastName: String(formData.get("lastName") ?? "").trim(),
+      phone: String(formData.get("phone") ?? "").trim(),
+      username: String(formData.get("username") ?? "").trim(),
+      registerNumber: parsedRegistration.registerNumber,
+      avatar: editingAvatar.trim() || null,
+      role: formData.get("role") === "RECEPTION" ? "RECEPTION" : "DOCTOR",
+    };
+    void updateEmployee(variables).then(
+      () => {
+        setEditingEmployee(null);
+        setNotice("Ажилтны мэдээлэл шинэчлэгдлээ.");
+        setFormError("");
       },
-    });
+      (cause: unknown) => setFormError(getErrorMessage(cause)),
+    );
   };
 
-  const handleDeleteEmployee = (employee: EmployeeRow) => {
+  const handleDeleteEmployee = (employee: EmployeeRecord) => {
     if (employee._id === user?._id) {
       setFormError("Та өөрийн идэвхтэй бүртгэлийг устгах боломжгүй.");
       return;
@@ -238,7 +148,13 @@ export const AdminDashboard = () => {
     }
     setNotice("");
     setFormError("");
-    deleteEmployee({ variables: { _id: employee._id } });
+    void deleteEmployee(employee._id).then(
+      () => {
+        setNotice("Ажилтны бүртгэл устгагдлаа.");
+        setFormError("");
+      },
+      (cause: unknown) => setFormError(getErrorMessage(cause)),
+    );
   };
 
   return (
@@ -320,7 +236,7 @@ export const AdminDashboard = () => {
               {saving ? "Хадгалж байна..." : "Ажилтан нэмэх"}
             </button>
           </div>
-          {formError && <p role="alert" className="text-sm text-rose-700 sm:col-span-2 lg:col-span-3">{formError}</p>}
+          {operationError && <p role="alert" className="text-sm text-rose-700 sm:col-span-2 lg:col-span-3">{operationError}</p>}
           {notice && <p role="status" className="text-sm text-emerald-700 sm:col-span-2 lg:col-span-3">{notice}</p>}
         </form>
 
@@ -332,7 +248,7 @@ export const AdminDashboard = () => {
           {error && <p role="alert" className="p-6 text-sm text-rose-700">{error.message}</p>}
           {!loading && !error && (
             <ul className="divide-y divide-[#f1eee8]">
-              {(data?.employees ?? []).map((employee) => (
+              {employees.map((employee) => (
                 <li key={employee._id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
                   <div className="flex items-center gap-3">
                     {employee.avatar ? (
@@ -507,9 +423,9 @@ export const AdminDashboard = () => {
                     <option value="RECEPTION">Бүртгэл</option>
                   </select>
                 </label>
-                {formError && (
+                {operationError && (
                   <p role="alert" className="text-sm text-rose-700 sm:col-span-2">
-                    {formError}
+                    {operationError}
                   </p>
                 )}
                 <div className="flex gap-3 border-t border-[#e8e3db] pt-4 sm:col-span-2">
@@ -538,5 +454,8 @@ export const AdminDashboard = () => {
   );
 };
 
-const employeeName = (employee: EmployeeRow) =>
+const employeeName = (employee: EmployeeRecord) =>
   `${employee.lastName} ${employee.firstName}`.trim() || employee.name;
+
+const getErrorMessage = (cause: unknown) =>
+  cause instanceof Error ? cause.message : "Үйлдлийг гүйцэтгэж чадсангүй.";

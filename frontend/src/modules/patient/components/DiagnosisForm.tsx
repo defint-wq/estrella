@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
 import { Check, FileText } from "lucide-react";
-import { APPOINTMENT_COMPLETE } from "../graphql/mutation/appointmentComplete";
 import {
   pageTextAreaClass,
   primaryButtonClass,
@@ -11,33 +9,34 @@ import {
 interface AppointmentDiagnosisFormProps {
   appointmentId: string;
   initialDiagnosis?: string;
+  saving: boolean;
+  error?: string;
+  onSave: (variables: { appointmentId: string; diagnosis: string }) => Promise<void>;
   onCancel: () => void;
-  onSuccess: () => void;
 }
 
 export const AppointmentDiagnosisForm = ({
   appointmentId,
   initialDiagnosis = "",
+  saving,
+  error,
+  onSave,
   onCancel,
-  onSuccess,
 }: AppointmentDiagnosisFormProps) => {
   const [diagnosisText, setDiagnosisText] = useState(initialDiagnosis);
-  const [error, setError] = useState("");
+  const [validationError, setValidationError] = useState("");
 
-  const [completeAppointment, { loading }] = useMutation(APPOINTMENT_COMPLETE, {
-    onCompleted: () => onSuccess(),
-    onError: (err) => setError("Алдаа гарлаа: " + err.message),
-  });
-
-  const handleSave = () => {
-    setError("");
+  const handleSave = async () => {
+    setValidationError("");
     if (!diagnosisText.trim()) {
-      setError("Та оношоо оруулна уу.");
+      setValidationError("Та оношоо оруулна уу.");
       return;
     }
-    completeAppointment({
-      variables: { appointmentId, diagnosis: diagnosisText.trim() },
-    });
+    try {
+      await onSave({ appointmentId, diagnosis: diagnosisText.trim() });
+    } catch {
+      // The parent surfaces the mutation error through the error prop.
+    }
   };
 
   return (
@@ -56,15 +55,15 @@ export const AppointmentDiagnosisForm = ({
         value={diagnosisText}
         onChange={(e) => {
           setDiagnosisText(e.target.value);
-          if (error) setError("");
+          if (validationError) setValidationError("");
         }}
         placeholder="Үйлчлүүлэгчийн онош, зөвлөгөөг энд бичнэ үү..."
         className={`${pageTextAreaClass} min-h-24`}
       />
 
-      {error && (
+      {(validationError || error) && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-[11px] font-medium text-rose-700">
-          {error}
+          {validationError || error}
         </div>
       )}
 
@@ -72,19 +71,19 @@ export const AppointmentDiagnosisForm = ({
         <button
           type="button"
           onClick={onCancel}
-          disabled={loading}
+          disabled={saving}
           className={`${secondaryButtonClass} px-3.5 py-2 text-xs`}
         >
           Цуцлах
         </button>
         <button
           type="button"
-          disabled={loading || !diagnosisText.trim()}
+          disabled={saving || !diagnosisText.trim()}
           onClick={handleSave}
           className={primaryButtonClass}
         >
           <Check size={14} />
-          {loading ? "Хадгалж байна..." : "Үзлэг дуусгах"}
+          {saving ? "Хадгалж байна..." : "Үзлэг дуусгах"}
         </button>
       </div>
     </div>

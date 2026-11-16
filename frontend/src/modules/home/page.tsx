@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@apollo/client/react";
+import { useState } from "react";
 import { CalendarDays, Search } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { PageContainer, PageContent } from "../../modules/app/ui/page";
-import { useDebouncedValue } from "../../modules/app/hooks/useDebouncedValue";
-import { GET_APPOINTMENTS } from "../../modules/patient/graphql/query/appointment";
-import type { AppointmentsQuery } from "../../modules/patient/types/patient";
+import { PageContainer, PageContent } from "../app/ui/page";
+import { useAuth } from "../auth/AuthContext";
+import { useAppointmentCompletion } from "../patient/hooks/useAppointmentCompletion";
+import type { AppointmentStatus } from "../patient/types/patient";
 import { ConsultationForm } from "../../components/ConsultationForm";
 import { InfiniteScrollTrigger } from "../../components/InfiniteScrollTrigger";
+import { useHomeAppointments } from "./hooks/useHomeAppointments";
 import type { DashboardAppointment, HomeOutletContext } from "./types";
-
-const APPOINTMENTS_PER_PAGE = 10;
 
 const tabClassName = ({ isActive }: { isActive: boolean }) =>
   `rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
@@ -19,100 +17,22 @@ const tabClassName = ({ isActive }: { isActive: boolean }) =>
       : "text-stone-500 hover:bg-white/70 hover:text-stone-900"
   }`;
 
-export const HomeLayout = () => {
+export const HomePage = () => {
   const [selectedAppointment, setSelectedAppointment] =
     useState<DashboardAppointment | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
-  const debouncedSearch = useDebouncedValue(searchQuery, 300);
-  const status = location.pathname.endsWith("/completed")
+  const { user } = useAuth();
+  const status: AppointmentStatus = location.pathname.endsWith("/completed")
     ? "COMPLETED"
     : "SCHEDULED";
-  const {
-    data,
-    loading: queryLoading,
-    error,
-    refetch,
-    fetchMore,
-  } = useQuery(GET_APPOINTMENTS, {
-    variables: {
-      page: 1,
-      perPage: APPOINTMENTS_PER_PAGE,
-      search: debouncedSearch.trim() || null,
-      status,
-    },
-    notifyOnNetworkStatusChange: true,
-  });
-  const appointments: DashboardAppointment[] = data?.appointments.list ?? [];
-  const pageInfo = data?.appointments.pageInfo;
-  const hasMore = pageInfo?.hasNextPage ?? false;
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
-  const fetchMoreLock = useRef(false);
-
-  useEffect(() => {
-    setLoadMoreError(null);
-  }, [debouncedSearch, status]);
-
-  const loadMore = useCallback(async () => {
-    if (!hasMore || queryLoading || fetchMoreLock.current) return;
-
-    fetchMoreLock.current = true;
-    setLoadingMore(true);
-    setLoadMoreError(null);
-    try {
-      const currentPage = pageInfo?.currentPage ?? 1;
-      await fetchMore({
-        variables: {
-          page: currentPage + 1,
-          perPage: APPOINTMENTS_PER_PAGE,
-          search: debouncedSearch.trim() || null,
-          status,
-        },
-        updateQuery: (
-          previous,
-          { fetchMoreResult },
-        ): AppointmentsQuery => {
-          if (!fetchMoreResult) return previous;
-          return {
-            ...previous,
-            appointments: {
-              ...previous.appointments,
-              ...fetchMoreResult.appointments,
-              list: [
-                ...previous.appointments.list,
-                ...fetchMoreResult.appointments.list,
-              ],
-            },
-          };
-        },
-      });
-    } catch (cause) {
-      setLoadMoreError(
-        cause instanceof Error
-          ? cause.message
-          : "Үлдсэн үзлэгүүдийг ачаалж чадсангүй.",
-      );
-    } finally {
-      fetchMoreLock.current = false;
-      setLoadingMore(false);
-    }
-  }, [
-    debouncedSearch,
-    fetchMore,
-    hasMore,
-    pageInfo?.currentPage,
-    queryLoading,
-    status,
-  ]);
-  const handleLoadMore = useCallback(() => {
-    void loadMore();
-  }, [loadMore]);
+  const appointmentQuery = useHomeAppointments(searchQuery, status);
+  const appointmentCompletion = useAppointmentCompletion();
 
   const outletContext: HomeOutletContext = {
-    appointments,
-    loading: queryLoading && !data?.appointments,
-    error: data?.appointments ? null : error?.message ?? null,
+    appointments: appointmentQuery.appointments,
+    loading: appointmentQuery.loading,
+    error: appointmentQuery.error,
     searchQuery,
     onSelectAppointment: setSelectedAppointment,
   };
@@ -127,7 +47,7 @@ export const HomeLayout = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-stone-900">
-                Үзлэгийн жагсаалт
+                <span>Үзлэгийн <span className="text-[#a48663]">жагсаалт</span></span>
               </h1>
             </div>
           </div>
@@ -162,10 +82,10 @@ export const HomeLayout = () => {
         <Outlet context={outletContext} />
 
         <InfiniteScrollTrigger
-          hasMore={hasMore}
-          loading={queryLoading || loadingMore}
-          error={loadMoreError}
-          onLoadMore={handleLoadMore}
+          hasMore={appointmentQuery.hasMore}
+          loading={appointmentQuery.isRefreshing || appointmentQuery.loadingMore}
+          error={appointmentQuery.loadMoreError}
+          onLoadMore={appointmentQuery.loadMore}
         />
 
         {selectedAppointment && (
@@ -174,8 +94,17 @@ export const HomeLayout = () => {
             appointment={selectedAppointment}
             patientName={selectedAppointment.patientName}
             registrationNumber={selectedAppointment.registrationNumber}
+            canEdit={
+              user?.role === "ADMIN" ||
+              (user?.role === "DOCTOR" &&
+                selectedAppointment.doctorId === user._id)
+            }
+            saving={appointmentCompletion.loading}
+            error={appointmentCompletion.error?.message}
+            onSave={async (variables) => {
+              await appointmentCompletion.completeAppointment(variables);
+            }}
             onClose={() => setSelectedAppointment(null)}
-            onSaved={() => void refetch()}
           />
         )}
       </PageContent>

@@ -1,28 +1,27 @@
 import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
 import {
   CalendarDays, CheckCircle2, Clock, Eye, FileText, Stethoscope, Trash2, XCircle,
 } from "lucide-react";
 import { ConsultationForm } from "../../../components/ConsultationForm";
-import { APPOINTMENT_CANCEL } from "../graphql/mutation/appointmentCancel";
 import { secondaryButtonClass, dangerButtonClass } from "../../app/ui/page";
-
-interface Appointment {
-  _id: string;
-  startTime: string;
-  endTime: string;
-  doctorName: string;
-  status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
-  diagnosis?: string;
-  examinationNotes?: string;
-  symptoms?: string;
-  treatment?: string;
-}
+import type {
+  Appointment,
+  AppointmentCompleteVariables,
+} from "../types/patient";
 
 interface AppointmentListProps {
   appointments: Appointment[];
   patientName: string;
   registrationNumber: string;
+  onCancelAppointment: (appointmentId: string) => void;
+  cancellingAppointment: boolean;
+  cancelError: string | null;
+  onCompleteAppointment: (
+    variables: AppointmentCompleteVariables,
+  ) => Promise<void>;
+  completingAppointment: boolean;
+  completionError: string | null;
+  canEditAppointment: (appointment: Appointment) => boolean;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -63,29 +62,16 @@ export const AppointmentList = ({
   appointments,
   patientName,
   registrationNumber,
+  onCancelAppointment,
+  cancellingAppointment,
+  cancelError,
+  onCompleteAppointment,
+  completingAppointment,
+  completionError,
+  canEditAppointment,
 }: AppointmentListProps) => {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [error, setError] = useState("");
-
-  const [cancelAppointment] = useMutation(APPOINTMENT_CANCEL, {
-    refetchQueries: ["patients"],
-    awaitRefetchQueries: true,
-  });
-
-  async function handleCancel(appointmentId: string) {
-    setError("");
-    setCancellingId(appointmentId);
-    try {
-      await cancelAppointment({ variables: { appointmentId } });
-      setConfirmId(null);
-    } catch (err) {
-      setError("Цуцлахад алдаа гарлаа: " + (err as Error).message);
-    } finally {
-      setCancellingId(null);
-    }
-  }
 
   if (!appointments || appointments.length === 0) {
     return (
@@ -117,9 +103,9 @@ export const AppointmentList = ({
         </span>
       </div>
 
-      {error && (
+      {cancelError && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11px] font-medium text-rose-700">
-          {error}
+          {cancelError}
         </div>
       )}
 
@@ -128,7 +114,7 @@ export const AppointmentList = ({
           const isScheduled = app.status === "SCHEDULED";
           const isCancelled = app.status === "CANCELLED";
           const isConfirming = confirmId === app._id;
-          const isCancelling = cancellingId === app._id;
+          const isCancelling = cancellingAppointment;
 
           return (
             <div
@@ -176,7 +162,7 @@ export const AppointmentList = ({
                         <button
                           type="button"
                           disabled={isCancelling}
-                          onClick={() => handleCancel(app._id)}
+                          onClick={() => onCancelAppointment(app._id)}
                           className={`${dangerButtonClass} px-3 py-2 text-xs`}
                         >
                           {isCancelling ? "..." : "Тийм"}
@@ -233,6 +219,10 @@ export const AppointmentList = ({
           appointment={selectedAppointment}
           patientName={patientName}
           registrationNumber={registrationNumber}
+          canEdit={canEditAppointment(selectedAppointment)}
+          saving={completingAppointment}
+          error={completionError ?? ""}
+          onSave={onCompleteAppointment}
           onClose={() => setSelectedAppointment(null)}
         />
       )}

@@ -1,13 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useMutation } from "@apollo/client/react";
 import { Pencil, X } from "lucide-react";
-import { PATIENT_EDIT } from "../graphql/mutation/patientEdit";
 import {
   pageCardClass,
   pageInputClass,
   primaryButtonClass,
   secondaryButtonClass,
 } from "../../app/ui/page";
+import type { PatientEditVariables } from "../types/patient";
 
 export interface PatientEditRecord {
   _id: string;
@@ -21,7 +20,9 @@ export interface PatientEditRecord {
 interface PatientEditModalProps {
   patient: PatientEditRecord;
   onClose: () => void;
-  onSuccess: () => void;
+  onSubmit: (variables: PatientEditVariables) => void;
+  loading: boolean;
+  error?: string;
 }
 
 const labelClass =
@@ -31,7 +32,9 @@ const inputClass = pageInputClass;
 export const PatientEditModal = ({
   patient,
   onClose,
-  onSuccess,
+  onSubmit,
+  loading,
+  error,
 }: PatientEditModalProps) => {
   const [firstName, setFirstName] = useState(patient.firstName ?? "");
   const [lastName, setLastName] = useState(patient.lastName ?? "");
@@ -40,11 +43,7 @@ export const PatientEditModal = ({
   );
   const [age, setAge] = useState(String(patient.age ?? ""));
   const [sex, setSex] = useState(patient.sex === "FEMALE" ? "FEMALE" : "MALE");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [updatePatient, { loading }] = useMutation(PATIENT_EDIT, {
-    onCompleted: onSuccess,
-    onError: (error) => setErrorMessage(error.message),
-  });
+  const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -65,20 +64,18 @@ export const PatientEditModal = ({
       parsedAge < 1 ||
       parsedAge > 130
     ) {
-      setErrorMessage("Мэдээллийг зөв бөглөнө үү.");
+      setValidationError("Мэдээллийг зөв бөглөнө үү.");
       return;
     }
 
-    setErrorMessage("");
-    updatePatient({
-      variables: {
-        _id: patient._id,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        registrationNumber: registrationNumber.trim().toUpperCase(),
-        age: parsedAge,
-        sex,
-      },
+    setValidationError("");
+    onSubmit({
+      _id: patient._id,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      registrationNumber: registrationNumber.trim().toUpperCase(),
+      age: parsedAge,
+      sex,
     });
   };
 
@@ -174,9 +171,9 @@ export const PatientEditModal = ({
             </label>
           </div>
 
-          {errorMessage && (
+          {(validationError || error) && (
             <p role="alert" className="text-sm text-rose-700">
-              {errorMessage}
+              {validationError || error}
             </p>
           )}
 

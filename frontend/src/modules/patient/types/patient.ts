@@ -1,10 +1,12 @@
+export type AppointmentStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED";
+
 export interface Appointment {
   _id: string;
   doctorId?: string;
   startTime: string;      // Бэкенд scalar DateTime -> Фронтенд string (ISO string)
   endTime: string;        // Бэкенд scalar DateTime -> Фронтенд string
   doctorName: string;
-  status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+  status: AppointmentStatus;
   diagnosis?: string;     // Бэкенд дээрх нэршил нь 'diagnosis' байгаа (reason биш)
   examinationNotes?: string;
   symptoms?: string;
@@ -19,6 +21,44 @@ export interface Patient {
   age: number;
   sex?: "MALE" | "FEMALE";    // Бэкенд дээрх Enum 'SexStatus'
   appointments: Appointment[];
+}
+
+export interface PatientRecord {
+  _id: string;
+  registrationNumber?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  age?: number | null;
+  sex?: "MALE" | "FEMALE" | string | null;
+  appointments?: Appointment[] | null;
+}
+
+export interface PatientAddVariables {
+  registrationNumber: string;
+  firstName: string;
+  lastName: string;
+  age: number;
+  sex: string;
+}
+
+export interface PatientEditVariables extends PatientAddVariables {
+  _id: string;
+}
+
+export interface AppointmentAddVariables {
+  patientId: string;
+  startTime: string;
+  endTime: string;
+  doctorId: string;
+  diagnosis?: string;
+}
+
+export interface AppointmentCompleteVariables {
+  appointmentId: string;
+  diagnosis: string;
+  examinationNotes?: string;
+  symptoms?: string;
+  treatment?: string;
 }
 
 export interface PageInfo {

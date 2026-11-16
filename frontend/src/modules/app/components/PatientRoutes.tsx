@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 
 const PatientIndexPage = lazy(() =>
-  import("../../../pages/PatientPage").then((module) => ({
+  import("../../patient/page").then((module) => ({
     default: module.PatientPage,
   })),
 );

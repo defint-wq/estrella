@@ -1,22 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@apollo/client/react";
 import {
   AlertTriangle, CalendarDays, ChevronDown, ChevronUp, Clock, Stethoscope, X,
 } from "lucide-react";
-import { APPOINTMENT_ADD } from "../graphql/mutation/appointmentAdd";
-import { GET_PATIENTS } from "../graphql/query/patient";
-import { GET_DOCTORS } from "../graphql/query/doctors";
 import {
   pageCardClass,
   pageInputClass,
   primaryButtonClass,
   secondaryButtonClass,
 } from "../../app/ui/page";
+import type {
+  AppointmentAddVariables,
+  PatientRecord,
+} from "../types/patient";
 
 interface AppointmentModalProps {
   patientId: string;
+  patients: PatientRecord[];
+  doctors: { _id: string; name: string }[];
+  loading: boolean;
+  dataLoading: boolean;
+  error?: string;
+  onSubmit: (variables: AppointmentAddVariables) => void;
   onClose: () => void;
-  onSuccess: () => void;
 }
 
 const SLOT_MINUTES = 20;
@@ -29,30 +34,23 @@ const toLocalDateStr = (d: Date) =>
 const labelClass =
   "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9b8a73]";
 
-export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentModalProps) => {
+export const AppointmentModal = ({
+  patientId,
+  patients,
+  doctors,
+  loading,
+  dataLoading,
+  error,
+  onSubmit,
+  onClose,
+}: AppointmentModalProps) => {
   const todayStr = toLocalDateStr(new Date());
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedTime, setSelectedTime] = useState("");
   const [doctorId, setDoctorId] = useState("");
   const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  const { data: patientsData } = useQuery(GET_PATIENTS, {
-    variables: { page: 1, perPage: 100 },
-  });
-  const { data: doctorsData } = useQuery<{
-    employees: { _id: string; name: string }[];
-  }>(GET_DOCTORS, {
-    variables: { role: "DOCTOR" },
-  });
-  const doctors: { _id: string; name: string }[] =
-    doctorsData?.employees ?? [];
   const selectedDoctor = doctors.find((doctor) => doctor._id === doctorId);
-
-  const [addAppointment, { loading }] = useMutation(APPOINTMENT_ADD, {
-    onCompleted: () => onSuccess(),
-    onError: (err) => setErrorMsg("Алдаа гарлаа: " + err.message),
-  });
 
   // Esc дарахад хаах
   useEffect(() => {
@@ -63,13 +61,12 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
 
   // Сонгосон эмчийн цагтай давхцаж байгааг шалгах
   const checkTimeConflict = (timeStr: string) => {
-    const list = patientsData?.patients?.list;
-    if (!list || !timeStr) return false;
+    if (!patients.length || !timeStr) return false;
 
     const checkStart = new Date(`${selectedDate}T${timeStr}:00`).getTime();
     const checkEnd = checkStart + SLOT_MINUTES * 60 * 1000;
 
-    for (const patient of list) {
+    for (const patient of patients) {
       if (!patient.appointments) continue;
       for (const app of patient.appointments) {
         if (app.status === "CANCELLED") continue;
@@ -100,7 +97,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
     }
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, patientsData, doctorId, selectedDoctor?.name]);
+  }, [selectedDate, patients, doctorId, selectedDoctor?.name]);
 
   const getEndTimeDisplay = () => {
     if (!selectedTime) return "--:--";
@@ -122,19 +119,21 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
     const startISO = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
     const endISO = new Date(`${selectedDate}T${getEndTimeDisplay()}:00`).toISOString();
 
-    addAppointment({
-      variables: {
-        patientId,
-        startTime: startISO,
-        endTime: endISO,
-        doctorId,
-        diagnosis: "",
-      },
+    onSubmit({
+      patientId,
+      startTime: startISO,
+      endTime: endISO,
+      doctorId,
+      diagnosis: "",
     });
   };
 
   const canSubmit =
-    !loading && !!doctorId && !!selectedTime && !isCurrentTimeSlotBusy;
+    !loading &&
+    !dataLoading &&
+    !!doctorId &&
+    !!selectedTime &&
+    !isCurrentTimeSlotBusy;
 
   return (
     <div
@@ -180,6 +179,7 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
               <select
                 id="appointment-doctor"
                 required
+                disabled={dataLoading}
                 value={doctorId}
                 onChange={(event) => {
                   setDoctorId(event.target.value);
@@ -187,7 +187,9 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
                 }}
                 className={pageInputClass}
               >
-                <option value="">Эмч сонгоно уу</option>
+                <option value="">
+                  {dataLoading ? "Эмчийн жагсаалт уншиж байна..." : "Эмч сонгоно уу"}
+                </option>
                 {doctors.map((doctor) => (
                   <option key={doctor._id} value={doctor._id}>{doctor.name}</option>
                 ))}
@@ -284,9 +286,9 @@ export const AppointmentModal = ({ patientId, onClose, onSuccess }: AppointmentM
               {selectedDoctor?.name} эмч энэ цагт өөр үзлэгтэй байна.
             </div>
           )}
-          {errorMsg && (
+          {(errorMsg || error) && (
             <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11px] font-medium text-rose-700">
-              {errorMsg}
+              {errorMsg || error}
             </div>
           )}
 
